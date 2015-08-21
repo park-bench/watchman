@@ -1,0 +1,11 @@
+Source: clover
+Section: parkbench
+Priority: required
+Maintainer: eviljoel, Andrew Klapp
+#Build-Depends:
+Standards-Version: 3.9.6.1
+
+Package: clover
+Architecture: any
+Depends: gpgmailer,timber
+Description: Our eyes when we are not there.

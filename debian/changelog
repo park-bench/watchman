@@ -1,0 +1,5 @@
+clover (0.1) stable; urgency=low
+
+  * Adding debuild support (painfully).
+
+ -- eviljoel <eviljoel@linux.com>  Thu, 20 Aug 2015 21:04:00 -0500

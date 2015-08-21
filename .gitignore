@@ -1,0 +1,4 @@
+debian/tmp
+debian/debhelper.log
+debian/files
+src/etc/opt/clover/clover.conf
