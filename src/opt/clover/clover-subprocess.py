@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 
 #import numpy as np
+import confighelper
+import ConfigParser
 import cv2
 import datetime
 import gpgmailqueue
@@ -10,22 +12,38 @@ import sys
 import timber
 import time
 
-log_file = '/var/opt/log/clover-subprocess.log'
-save_path = '/var/opt/log/clover/images/'
-movement_time_threshold = 1.000000  # Time in seconds
-prior_movements_per_threshold = 0   # Can be increased to make movements less sensitive
+print('Loading configuration.')
+config_file = ConfigParser.SafeConfigParser()
+config_file.read('/etc/opt/clover/clover.conf')
+
+# Figure out the logging options so that can start before anything else.
+print('Verifying configuration.')
+log_file = config_helper.verify_string_exists_prelogging(config_file, 'subprocess_log_file')
+log_level = config_helper.verify_string_exists_prelogging(config_file, 'subprocess_log_level')
+
+logger = timber.get_instance_with_filename(log_file, log_level)
+
+save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
+# Time in seconds
+movement_time_threshold = config_helper.verify_number_exists(config_file, '')
+# Can be increased to make movements less sensitive
+prior_movements_per_threshold = config_helper.verify_integer_exists(config_file, 'prior_movements_per_threshold')
+# How much the two frames have to vary to be considered different
+pixel_difference_threshold = config_helper.verify_number_exists(config_file, 'pixel_difference_threshold')
+second_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'second_email_image_save_times')
+# Time in seconds since last e-mail
+second_email_delay = config_helper.verify_number_exists(config_file, 'second_email_delay')
+third_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'third_email_image_save_times') 
+# Time in seconds since last e-mail
+third_email_delay = config_helper.verify_number_exists(config_file, 'third_email_delay')
+subsequent_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'subsequent_email_image_save_times')
+# Time in seconds since last e-mail
+subsequent_image_delay = config_helper.verify_number_exists(config_file, 'subsequent_image_delay')
+# Time in seconds since last e-mail triggering motion
+stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold')
+
 subtractor = cv2.BackgroundSubtractorMOG()  # Can use different subtractors
 #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
-pixel_difference_threshold = .15  # How much the two frames have to vary to be considered different
-second_email_image_save_times = [1.25, 2.5]
-second_email_delay = 2.5  # Time in seconds since last e-mail
-third_email_image_save_times = [1.25, 2.5]
-third_email_delay = 2.5  # Time in seconds since last e-mail
-subsequent_email_image_save_times = [10, 20, 30]
-subsequent_image_delay = 30  # Time in seconds since last e-mail
-stop_threshold = 65  # Time in seconds since last e-mail triggering motion
-
-logger = timber.get_instance_with_filename(log_file)
 
 saved_frames = []
 prior_movements = [None] * prior_movements_per_threshold

@@ -1,5 +1,8 @@
 #!/usr/bin/env python2
 
+import cloverconfig
+import confighelper
+import ConfigParser
 import glob
 import os
 import signal
@@ -9,10 +12,25 @@ import timber
 import time
 import traceback
 
-LOG_FILE = '/var/opt/log/clover.log'
-PID_FILE = '/var/opt/run/clover.pid'
+pid_file = '/var/opt/run/clover.pid'
 
-logger = timber.get_instance_with_filename(LOG_FILE)
+print('Loading configuration.')
+config_file = ConfigParser.SafeConfigParser()
+config_file.read('/etc/opt/clover/clover.conf')
+
+# Figure out the logging options so that can start before anything else.
+print('Verifying configuration.')
+config_helper = confighelper.ConfigHelper()
+log_file = config_helper.verify_string_exists_prelogging(config_file, 'main_process_log_file')
+log_level = config_helper.verify_string_exists_prelogging(config_file, 'main_process_log_level')
+
+logger = timber.get_instance_with_filename(log_file, log_level)
+
+subprocess_pathname = config_helper.verify_string_exists(config_file, 'subprocess_pathname')
+
+# We don't care what the results are, we just want the program to die if there is an error
+#   with the subprocess configuration.
+cloverconfig.CloverConfig()
 
 def daemonize():
     # Fork the first time to make init our parent.
@@ -21,7 +39,7 @@ def daemonize():
         if pid > 0:
             sys.exit(0)
     except OSError, e:
-        logger.trace("Failed to make parent process init: %d (%s)" % (e.errno, e.strerror))
+        logger.fatal("Failed to make parent process init: %d (%s)" % (e.errno, e.strerror))
         sys.exit(1)
 
     os.chdir("/")  # Change the working directory
@@ -35,7 +53,7 @@ def daemonize():
         if pid > 0:
             sys.exit(0)
     except OSError, e:
-        logger.trace("Failed to give up session leadership: %d (%s)" % (e.errno, e.strerror))
+        logger.fatal("Failed to give up session leadership: %d (%s)" % (e.errno, e.strerror))
         sys.exit(1)
 
     # Redirect standard file descriptors
@@ -48,9 +66,9 @@ def daemonize():
     os.close(devnull)
 
     pid = str(os.getpid())
-    pidFile = file(PID_FILE,'w')
-    pidFile.write("%s\n" % pid)
-    pidFile.close()
+    pid_file_handle = file(pid_file,'w')
+    pid_file_handle.write("%s\n" % pid)
+    pid_file_handle.close()
     
 daemonize()
 
@@ -58,9 +76,9 @@ clover_subprocess = None
 
 # Quit when SIGTERM is received
 def sig_term_handler(signal, stack_frame):
-    logger.trace("Quitting.")
+    logger.fatal("Quitting.")
     if clover_subprocess <> None:
-        logger.trace("Killing clover subprocess.");
+        logger.info("Killing clover subprocess.");
         clover_subprocess.kill()
     sys.exit(0)
 
@@ -78,9 +96,8 @@ try:
     while 1:   
 
         # Startup the subprocess to that takes photos
-        # TODO: Change to /opt/clover/clover-subprocess.py
-        logger.trace("Starting clover subprocess with device number %s." % device_number)
-        clover_subprocess = subprocess.Popen(["/opt/clover/clover-subprocess.py", device_number])
+        logger.info("Starting clover subprocess with device number %s." % device_number)
+        clover_subprocess = subprocess.Popen([subprocess_pathname, device_number])
 
         # Loop while the device exists
         while len(glob.glob(selected_device)) == 1 and clover_subprocess.poll() == None:
@@ -88,24 +105,24 @@ try:
 
         # Kill the subprocess so it can be restarted
         try:
-            logger.trace("Detected device removal. Killing clover subprocess.");
+            logger.info("Detected device removal. Killing clover subprocess.");
             clover_subprocess.kill()
         except OSError as e:
-            logger.trace("Error killing clover subprocess. %s: %s" % \
+            logger.error("Error killing clover subprocess. %s: %s" % \
                 (type(e).__name__, e.message))
-            logger.trace("%s" % traceback.format_exc())
-            logger.trace("Ignoring.")
+            logger.error("%s" % traceback.format_exc())
+            logger.error("Ignoring.")
 
         # Wait for the device to come back
         while len(glob.glob(selected_device)) == 0:
             time.sleep(.1)
 
-        logger.trace("Detected device insertion.");
+        logger.info("Detected device insertion.");
 
 except Exception as e:
-    logger.trace("Fatal %s: %s" % (type(e).__name__, e.message))
-    logger.trace("%s" % traceback.format_exc())
+    logger.fatal("Fatal %s: %s" % (type(e).__name__, e.message))
+    logger.error("%s" % traceback.format_exc())
     if clover_subprocess <> None:
-        logger.trace("Killing clover subprocess.");
+        logger.info("Killing clover subprocess.");
         clover_subprocess.kill()
     sys.exit(1)
