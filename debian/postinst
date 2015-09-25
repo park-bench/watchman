@@ -1,0 +1,4 @@
+#!/bin/sh
+
+update-rc.d clover defaults || exit 1
+invoke-rc.d clover start || exit 1
