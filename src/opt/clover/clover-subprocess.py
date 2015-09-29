@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
 #import numpy as np
+import cloverconfig
 import confighelper
 import ConfigParser
 import cv2
@@ -23,24 +24,7 @@ log_level = config_helper.verify_string_exists_prelogging(config_file, 'subproce
 
 logger = timber.get_instance_with_filename(log_file, log_level)
 
-save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
-# Time in seconds
-movement_time_threshold = config_helper.verify_number_exists(config_file, '')
-# Can be increased to make movements less sensitive
-prior_movements_per_threshold = config_helper.verify_integer_exists(config_file, 'prior_movements_per_threshold')
-# How much the two frames have to vary to be considered different
-pixel_difference_threshold = config_helper.verify_number_exists(config_file, 'pixel_difference_threshold')
-second_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'second_email_image_save_times')
-# Time in seconds since last e-mail
-second_email_delay = config_helper.verify_number_exists(config_file, 'second_email_delay')
-third_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'third_email_image_save_times') 
-# Time in seconds since last e-mail
-third_email_delay = config_helper.verify_number_exists(config_file, 'third_email_delay')
-subsequent_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'subsequent_email_image_save_times')
-# Time in seconds since last e-mail
-subsequent_image_delay = config_helper.verify_number_exists(config_file, 'subsequent_image_delay')
-# Time in seconds since last e-mail triggering motion
-stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold')
+config = cloverconfig.CloverConfig(config_file)
 
 subtractor = cv2.BackgroundSubtractorMOG()  # Can use different subtractors
 #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))

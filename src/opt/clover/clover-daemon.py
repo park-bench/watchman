@@ -30,7 +30,7 @@ subprocess_pathname = config_helper.verify_string_exists(config_file, 'subproces
 
 # We don't care what the results are, we just want the program to die if there is an error
 #   with the subprocess configuration.
-cloverconfig.CloverConfig()
+cloverconfig.CloverConfig(config_file)
 
 def daemonize():
     # Fork the first time to make init our parent.

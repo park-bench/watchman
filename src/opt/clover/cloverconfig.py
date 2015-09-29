@@ -5,7 +5,7 @@ import timber
 class CloverConfig:
 
     # Reads the clover subprocess configuration and exits the program there is an error.
-    def __init__(self):
+    def __init__(self, config_file):
 
         self.logger = timber.get_instance()
 
