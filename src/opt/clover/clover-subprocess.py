@@ -106,7 +106,7 @@ def send_image_emails(message, images):
     body['attachments'] = jpeg_images
 
     global logger
-    logger.trace("Sending E-mail.")
+    logger.info("Sending E-mail.")
     gpgmailqueue.send(body)
 
 
