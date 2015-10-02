@@ -19,6 +19,7 @@ config_file.read('/etc/opt/clover/clover.conf')
 
 # Figure out the logging options so that can start before anything else.
 print('Verifying configuration.')
+config_helper = confighelper.ConfigHelper()
 log_file = config_helper.verify_string_exists_prelogging(config_file, 'subprocess_log_file')
 log_level = config_helper.verify_string_exists_prelogging(config_file, 'subprocess_log_level')
 
@@ -30,7 +31,7 @@ subtractor = cv2.BackgroundSubtractorMOG()  # Can use different subtractors
 #kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
 saved_frames = []
-prior_movements = [None] * prior_movements_per_threshold
+prior_movements = [None] * config.prior_movements_per_threshold
 
 first_email_sent = None
 second_email_sent = None
@@ -101,7 +102,7 @@ def send_image_emails(message, images):
     del images[:]
 
     body = {}
-    body['subject'] = 'Bandersnatch 3'
+    body['subject'] = config.motion_detection_email_subject
     body['message'] = message
     body['attachments'] = jpeg_images
 
@@ -136,7 +137,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     #logger.debug('absolute_mean_total: {0:.10f}'.format(absolute_mean_total))
 
     # See if there has been enough motion to start sending e-mails
-    if (absolute_mean_total > pixel_difference_threshold):
+    if (absolute_mean_total > config.pixel_difference_threshold):
 
         # Obtain the time of the differnce
         now = current_frame['time']
@@ -151,7 +152,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
         if (prior_movement_time != None and prior_movement_time != 'End'):
             time_difference = now - prior_movement_time
         while (prior_movement_time != None and prior_movement_time != 'End' and \
-                time_difference.total_seconds() <= movement_time_threshold):
+                time_difference.total_seconds() <= config.movement_time_threshold):
             prior_movement_time = next(prior_movements_iterator, 'End')
             if (prior_movement_time != None and prior_movement_time != 'End'):
                 time_difference = now - prior_movement_time
@@ -171,39 +172,39 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     # Grab images for the second e-mail
     if (first_email_sent != None):
         store_frames_on_threshold(saved_frames, first_email_sent, \
-                last_frame, current_frame, second_email_image_save_times)
+                last_frame, current_frame, config.second_email_image_save_times)
 
     # Send another e-mail after so many seconds
     if (first_email_sent != None and did_threshold_trigger(first_email_sent, last_frame, \
-            current_frame, second_email_delay)):
+            current_frame, config.second_email_delay)):
         send_image_emails('Follow up one.', saved_frames)
-        second_email_sent = first_email_sent + datetime.timedelta(0, second_email_delay)
+        second_email_sent = first_email_sent + datetime.timedelta(0, config.second_email_delay)
 
     # Grab images for the third e-mail
     if (second_email_sent != None):
         store_frames_on_threshold(saved_frames, second_email_sent, \
-                last_frame, current_frame, third_email_image_save_times)
+                last_frame, current_frame, config.third_email_image_save_times)
 
     # Send third e-mail after so many seconds
     if (second_email_sent != None and did_threshold_trigger(second_email_sent, last_frame, \
-            current_frame, third_email_delay)):
+            current_frame, config.third_email_delay)):
         send_image_emails('Follow up two.', saved_frames)
-        last_email_sent = second_email_sent + datetime.timedelta(0, third_email_delay)
+        last_email_sent = second_email_sent + datetime.timedelta(0, config.third_email_delay)
 
     # Grab images for subsequent e-mails
     if (last_email_sent != None):
         store_frames_on_threshold(saved_frames, last_email_sent, \
-                last_frame, current_frame, subsequent_email_image_save_times)
+                last_frame, current_frame, config.subsequent_email_image_save_times)
 
     # Send subsequent e-mails after so many seconds
     if (last_email_sent != None and did_threshold_trigger(last_email_sent, last_frame, \
-            current_frame, subsequent_image_delay)):
+            current_frame, config.subsequent_email_delay)):
         send_image_emails('Continued motion.', saved_frames)
-        last_email_sent = last_email_sent + datetime.timedelta(0, subsequent_image_delay)
+        last_email_sent = last_email_sent + datetime.timedelta(0, config.subsequent_email_delay)
 
     # See if the motion has stopped.
     if (last_trigger_motion != None and did_threshold_trigger(last_trigger_motion, \
-            last_frame, current_frame, stop_threshold)):
+            last_frame, current_frame, config.stop_threshold)):
 
         # Clear out the image buffer if images exist
         if (len(saved_frames) > 0):
@@ -216,7 +217,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Save the image?
     if (current_frame['save'] == True):
-        pathname = ('%s%s.jpg') % (save_path, current_frame['time'].strftime('%Y%m%d%H%M%S%f'))
+        pathname = ('%s%s.jpg') % (config.image_save_path, current_frame['time'].strftime('%Y%m%d%H%M%S%f'))
         # TODO: Find a way to enable this before going live.
         #cv2.imwrite(pathname, current_frame['frame']);
 

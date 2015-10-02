@@ -19,7 +19,10 @@ class CloverConfig:
         config_helper.verify_string_exists(config_file, 'subprocess_log_file')
         config_helper.verify_string_exists(config_file, 'subprocess_log_level')
 
-        self.save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
+        self.image_save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
+
+        # Subject on motion detection e-mails
+        self.motion_detection_email_subject = config_helper.verify_string_exists(config_file, 'motion_detection_email_subject')
         # Time in seconds
         self.movement_time_threshold = config_helper.verify_number_exists(config_file, 'movement_time_threshold')
         # Can be increased to make movements less sensitive
@@ -34,6 +37,11 @@ class CloverConfig:
         self.third_email_delay = config_helper.verify_number_exists(config_file, 'third_email_delay')
         self.subsequent_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'subsequent_email_image_save_times')
         # Time in seconds since last e-mail
-        self.subsequent_image_delay = config_helper.verify_number_exists(config_file, 'subsequent_image_delay')
+        self.subsequent_email_delay = config_helper.verify_number_exists(config_file, 'subsequent_email_delay')
         # Time in seconds since last e-mail triggering motion
-        self.stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold') 
+        self.stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold')
+
+        # Subject for still running notification.
+        self.still_running_notification_subject = config_helper.verify_string_exists(config_file, 'still_running_notification_subject')
+        # Maximum time in days before still running notification is sent.
+        self.still_running_notification_max_delay = config_helper.verify_number_exists(config_file, 'still_running_notification_max_delay')
