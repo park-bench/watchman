@@ -9,6 +9,7 @@ import datetime
 import gpgmailqueue
 import glob
 import math
+import random
 import sys
 import timber
 import time
@@ -88,6 +89,7 @@ def send_image_emails(message, images):
     for image in images:
 
         # Resize to fit in a hi-def screen
+        # TODO: Don't resize if original resolution is smaller.
         small_frame = cv2.resize(image['frame'], (1440,1080))
 
         # Save the file in memory
@@ -112,7 +114,8 @@ def send_image_emails(message, images):
 
 
 current_frame = capture_frame(capture_device)  # Capture the first frame
-
+next_still_running_email_time = current_frame['time'] + \
+        datetime.timedelta(seconds=random.uniform(0, config.still_running_email_max_delay * 86400))
 
 while(cv2.waitKey(1) & 0xFF != ord('q')):
 
@@ -134,7 +137,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
         absolute_mean_total += math.fabs(channel_mean)  # Add the absolute value of the mean
     
     #logger.debug('difference: %s' % str(difference))
-    #logger.debug('absolute_mean_total: {0:.10f}'.format(absolute_mean_total))
+    logger.trace('absolute_mean_total: {0:.10f}'.format(absolute_mean_total))
 
     # See if there has been enough motion to start sending e-mails
     if (absolute_mean_total > config.pixel_difference_threshold):
@@ -218,8 +221,20 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     # Save the image?
     if (current_frame['save'] == True):
         pathname = ('%s%s.jpg') % (config.image_save_path, current_frame['time'].strftime('%Y%m%d%H%M%S%f'))
-        # TODO: Find a way to enable this before going live.
-        #cv2.imwrite(pathname, current_frame['frame']);
+        cv2.imwrite(pathname, current_frame['frame']);
+
+    # Send still running notification?
+    if (current_frame['time'] > next_still_running_email_time):
+        body = {}
+        body['subject'] = config.still_running_email_subject
+        body['message'] = 'Clover is still running as of %s.' % current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f')
+
+        logger.info('Sending still running notification e-mail.')
+        gpgmailqueue.send(body)
+
+        # Convert still_running_email_max_delay to seconds
+        next_still_running_email_time = current_frame['time'] + \
+                datetime.timedelta(seconds=random.uniform(0, config.still_running_email_max_delay * 86400))
 
 # Clean up
 capture_device.release()

@@ -42,6 +42,6 @@ class CloverConfig:
         self.stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold')
 
         # Subject for still running notification.
-        self.still_running_notification_subject = config_helper.verify_string_exists(config_file, 'still_running_notification_subject')
+        self.still_running_email_subject = config_helper.verify_string_exists(config_file, 'still_running_email_subject')
         # Maximum time in days before still running notification is sent.
-        self.still_running_notification_max_delay = config_helper.verify_number_exists(config_file, 'still_running_notification_max_delay')
+        self.still_running_email_max_delay = config_helper.verify_number_exists(config_file, 'still_running_email_max_delay')
