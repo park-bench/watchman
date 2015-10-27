@@ -32,6 +32,11 @@ subprocess_pathname = config_helper.verify_string_exists(config_file, 'subproces
 #   with the subprocess configuration.
 cloverconfig.CloverConfig(config_file)
 
+# We actually do care about one option.
+ignored_devices = config_helper.verify_string_exists(config_file, 'ignored_devices')
+ignored_device_list = ignored_devices.split(',')
+
+
 def daemonize():
     # Fork the first time to make init our parent.
     try:
@@ -89,6 +94,12 @@ try:
     #   specific methods.
     video_devices = glob.glob("/dev/video[0-9]")
     video_devices.sort(reverse=True)
+
+    # Remove each device in ignored_devices in video_devices
+    for name in ignored_device_list:
+        video_devices.remove(name)
+        logger.info('Ignoring device %s.' % name)
+
     selected_device = video_devices[0]
     device_number = selected_device[-1] 
 
@@ -96,7 +107,7 @@ try:
     while 1:   
 
         # Startup the subprocess to that takes photos
-        logger.info("Starting clover subprocess with device number %s." % device_number)
+        logger.info("Starting clover subprocess with device %s." % selected_device)
         clover_subprocess = subprocess.Popen([subprocess_pathname, device_number])
 
         # Loop while the device exists
