@@ -32,6 +32,7 @@ subprocess_pathname = config_helper.verify_string_exists(config_file, 'subproces
 #   with the subprocess configuration.
 cloverconfig.CloverConfig(config_file)
 
+# TODO: Move this to common library.
 def daemonize():
     # Fork the first time to make init our parent.
     try:
@@ -42,6 +43,7 @@ def daemonize():
         logger.fatal("Failed to make parent process init: %d (%s)" % (e.errno, e.strerror))
         sys.exit(1)
 
+    # TODO: Consider changing these to be more restrictive
     os.chdir("/")  # Change the working directory
     os.setsid()  # Create a new process session.
     os.umask(0)

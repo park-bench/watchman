@@ -1,5 +1,10 @@
 #!/usr/bin/env python2
 
+# TODO: Consider detecting and sending the most interesting images.
+# TODO: Consider using facial detection.
+# TODO: Consider switching to Python 3 to use more advanced detection algorithms.
+# TODO: Make this file a class
+
 #import numpy as np
 import cloverconfig
 import confighelper
@@ -108,6 +113,7 @@ def send_image_emails(message, images):
     body['message'] = message
     body['attachments'] = jpeg_images
 
+    # TODO: Remove use of 'global'.
     global logger
     logger.info('Sending E-mail.')
     gpgmailqueue.send(body)
@@ -117,6 +123,7 @@ current_frame = capture_frame(capture_device)  # Capture the first frame
 next_still_running_email_time = current_frame['time'] + \
         datetime.timedelta(seconds=random.uniform(0, config.still_running_email_max_delay * 86400))
 
+# Sometimes we run this program interactively for debugging purposes.
 while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     last_frame = current_frame
@@ -238,4 +245,4 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
 # Clean up
 capture_device.release()
-cv2.destroyAllWindows()
+cv2.destroyAllWindows()  # Again for interactive debugging.
