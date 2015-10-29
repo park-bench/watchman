@@ -7,5 +7,5 @@ Standards-Version: 3.9.6.1
 
 Package: clover
 Architecture: any
-Depends: confighelper,gpgmailer,timber
+Depends: confighelper,gpgmailer,timber,python-opencv
 Description: Our eyes when we are not there.
