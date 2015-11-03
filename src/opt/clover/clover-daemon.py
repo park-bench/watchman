@@ -15,7 +15,7 @@ import traceback
 pid_file = '/var/opt/run/clover.pid'
 
 print('Loading configuration.')
-config_file = ConfigParser.SafeConfigParser()
+config_file = ConfigParser.RawConfigParser()
 config_file.read('/etc/opt/clover/clover.conf')
 
 # Figure out the logging options so that can start before anything else.
@@ -34,8 +34,13 @@ cloverconfig.CloverConfig(config_file)
 
 # We actually do care about this option. Basically, this option exists to ignore built in 
 #   cameras on the laptops we use to test with.
-ignored_devices = config_helper.verify_string_exists(config_file, 'ignored_devices')
-ignored_device_list = ignored_devices.split(',')
+ignored_devices = config_helper.get_string_if_exists(config_file, 'ignored_devices')
+if(ignored_devices is not None):
+    ignored_device_list = ignored_devices.split(',')
+    logger.trace('Ignored devices!')
+else:
+    ignored_device_list = []
+    logger.trace('No ignored devices!  Yay!')
 
 # TODO: Move this to common library.
 def daemonize():
@@ -97,6 +102,7 @@ try:
     video_devices = glob.glob("/dev/video[0-9]")
     video_devices.sort(reverse=True)
 
+    # TODO: if an ignored device is not in the list it crashes, fix this
     # Remove each device in ignored_devices in video_devices
     for name in ignored_device_list:
         video_devices.remove(name)

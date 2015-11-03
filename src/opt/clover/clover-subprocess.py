@@ -63,12 +63,19 @@ def capture_frame(capture_device):
     
 
 # Stores current_frame in saves_frame frame array if the threshold has been crossed.
-def store_frames_on_threshold(saved_frames, start_time, last_frame, current_frame, thresholds):
+# TODO: pass in the last time an image was saved via this method, check if 1s has passed
+#       before saving the image again.
+def store_frames_on_threshold(saved_frames, start_time, last_frame, current_frame, thresholds, last_save_time):
     for threshold in thresholds:
         if (did_threshold_trigger(start_time, last_frame, current_frame, threshold)):
-            current_frame['save'] = True
-            saved_frames.append(current_frame)
-            break
+            # TODO: Check if 1s has passed since last_save_time
+            # TODO: This comparison seems to not be doing what we want.
+            if((datetime.datetime.now() - last_save_time) >= datetime.timedelta(seconds=1)):
+                current_frame['save'] = True
+                last_save_time = datetime.datetime.now()
+                saved_frames.append(current_frame)
+                break
+    return last_save_time
 
 
 # Compares previous and current frame times against a start time to see if enough
@@ -118,7 +125,8 @@ def send_image_emails(message, images):
     logger.info('Sending E-mail.')
     gpgmailqueue.send(body)
 
-
+# Use a global variable to set last_frame_saved for sanity
+last_save_time = datetime.datetime.now()
 current_frame = capture_frame(capture_device)  # Capture the first frame
 next_still_running_email_time = current_frame['time'] + \
         datetime.timedelta(seconds=random.uniform(0, config.still_running_email_max_delay * 86400))
@@ -181,8 +189,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Grab images for the second e-mail
     if (first_email_sent != None):
-        store_frames_on_threshold(saved_frames, first_email_sent, \
-                last_frame, current_frame, config.second_email_image_save_times)
+        last_save_time = store_frames_on_threshold(saved_frames, first_email_sent, \
+                last_frame, current_frame, config.second_email_image_save_times, last_save_time)
 
     # Send another e-mail after so many seconds
     if (first_email_sent != None and did_threshold_trigger(first_email_sent, last_frame, \
@@ -192,8 +200,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Grab images for the third e-mail
     if (second_email_sent != None):
-        store_frames_on_threshold(saved_frames, second_email_sent, \
-                last_frame, current_frame, config.third_email_image_save_times)
+        last_save_time = store_frames_on_threshold(saved_frames, second_email_sent, \
+                last_frame, current_frame, config.third_email_image_save_times, last_save_time)
 
     # Send third e-mail after so many seconds
     if (second_email_sent != None and did_threshold_trigger(second_email_sent, last_frame, \
@@ -203,8 +211,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Grab images for subsequent e-mails
     if (last_email_sent != None):
-        store_frames_on_threshold(saved_frames, last_email_sent, \
-                last_frame, current_frame, config.subsequent_email_image_save_times)
+        last_save_time = store_frames_on_threshold(saved_frames, last_email_sent, \
+                last_frame, current_frame, config.subsequent_email_image_save_times, last_save_time)
 
     # Send subsequent e-mails after so many seconds
     if (last_email_sent != None and did_threshold_trigger(last_email_sent, last_frame, \
