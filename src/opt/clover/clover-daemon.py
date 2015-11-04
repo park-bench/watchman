@@ -103,6 +103,11 @@ try:
     video_devices.sort(reverse=True)
 
     # TODO: if an ignored device is not in the list it crashes, fix this
+    # TODO: Right now the camera has to be plugged in when the daemon starts.
+    #   If no devices are available when selected_device is set, assume the
+    #   device number is video_devices[-1][-1] + 1 but grab this value before the
+    #   ignored_devices list is evaluated. If ignored_devices_list is empty at this
+    #   point, set selected_device to 0.
     # Remove each device in ignored_devices in video_devices
     for name in ignored_device_list:
         video_devices.remove(name)

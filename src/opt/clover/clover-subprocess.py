@@ -50,7 +50,7 @@ capture_device = cv2.VideoCapture(int(sys.argv[1]))  # Open the camera
 # Captures a frame, performs actions necessary for each frame, and stores the data
 #   in a frame dictionary.
 def capture_frame(capture_device):
-    ret, frame = capture_device.read();
+    ret, frame = capture_device.read()
 
     frame_dict = {}
     frame_dict['time'] = datetime.datetime.now()
@@ -65,17 +65,12 @@ def capture_frame(capture_device):
 # Stores current_frame in saves_frame frame array if the threshold has been crossed.
 # TODO: pass in the last time an image was saved via this method, check if 1s has passed
 #       before saving the image again.
-def store_frames_on_threshold(saved_frames, start_time, last_frame, current_frame, thresholds, last_save_time):
+def store_frames_on_threshold(saved_frames, start_time, last_frame, current_frame, thresholds):
     for threshold in thresholds:
         if (did_threshold_trigger(start_time, last_frame, current_frame, threshold)):
-            # TODO: Check if 1s has passed since last_save_time
-            # TODO: This comparison seems to not be doing what we want.
-            if((datetime.datetime.now() - last_save_time) >= datetime.timedelta(seconds=1)):
-                current_frame['save'] = True
-                last_save_time = datetime.datetime.now()
-                saved_frames.append(current_frame)
-                break
-    return last_save_time
+            current_frame['save'] = True
+            saved_frames.append(current_frame)
+            break
 
 
 # Compares previous and current frame times against a start time to see if enough
@@ -110,7 +105,7 @@ def send_image_emails(message, images):
         # Put it in the format that the mailer expects it
         image_dict = {}
         image_dict['data'] = small_jpeg
-        image_dict['filename'] = '%s-small.jpg' % image['time'].strftime('%Y%m%d%H%M%S%f')
+        image_dict['filename'] = '%s-small.jpg' % image['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
         jpeg_images.append(image_dict)
 
     del images[:]
@@ -125,9 +120,8 @@ def send_image_emails(message, images):
     logger.info('Sending E-mail.')
     gpgmailqueue.send(body)
 
-# Use a global variable to set last_frame_saved for sanity
-last_save_time = datetime.datetime.now()
 current_frame = capture_frame(capture_device)  # Capture the first frame
+last_image_save_time = current_frame['time']
 next_still_running_email_time = current_frame['time'] + \
         datetime.timedelta(seconds=random.uniform(0, config.still_running_email_max_delay * 86400))
 
@@ -147,7 +141,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     channel_means = cv2.mean(difference_frame)  # Find the mean difference of each channel
 
-    absolute_mean_total = 0;
+    absolute_mean_total = 0
     for channel_mean in channel_means:
         absolute_mean_total += math.fabs(channel_mean)  # Add the absolute value of the mean
     
@@ -160,9 +154,13 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
         # Obtain the time of the differnce
         now = current_frame['time']
 
-        # Save the image
-        #logger.debug('Save image')
-        current_frame['save'] = True
+        # Make sure a specific amount of time has passed since the last local image save.
+        #   (E-mail initiated saves do not count.)
+        if((current_frame['time'] - last_image_save_time) >= datetime.timedelta(seconds=config.image_save_throttle_delay)):
+            # Save the image
+            logger.trace('Image marked for local save at %s.' % current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
+            current_frame['save'] = True
+            last_image_save_time = current_frame['time']
 
         # See if there has been another difference in the last second
         prior_movements_iterator = iter(prior_movements)
@@ -189,8 +187,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Grab images for the second e-mail
     if (first_email_sent != None):
-        last_save_time = store_frames_on_threshold(saved_frames, first_email_sent, \
-                last_frame, current_frame, config.second_email_image_save_times, last_save_time)
+        store_frames_on_threshold(saved_frames, first_email_sent, \
+                last_frame, current_frame, config.second_email_image_save_times)
 
     # Send another e-mail after so many seconds
     if (first_email_sent != None and did_threshold_trigger(first_email_sent, last_frame, \
@@ -200,8 +198,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Grab images for the third e-mail
     if (second_email_sent != None):
-        last_save_time = store_frames_on_threshold(saved_frames, second_email_sent, \
-                last_frame, current_frame, config.third_email_image_save_times, last_save_time)
+        store_frames_on_threshold(saved_frames, second_email_sent, \
+                last_frame, current_frame, config.third_email_image_save_times)
 
     # Send third e-mail after so many seconds
     if (second_email_sent != None and did_threshold_trigger(second_email_sent, last_frame, \
@@ -211,8 +209,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Grab images for subsequent e-mails
     if (last_email_sent != None):
-        last_save_time = store_frames_on_threshold(saved_frames, last_email_sent, \
-                last_frame, current_frame, config.subsequent_email_image_save_times, last_save_time)
+        store_frames_on_threshold(saved_frames, last_email_sent, \
+                last_frame, current_frame, config.subsequent_email_image_save_times)
 
     # Send subsequent e-mails after so many seconds
     if (last_email_sent != None and did_threshold_trigger(last_email_sent, last_frame, \
@@ -235,8 +233,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
     # Save the image?
     if (current_frame['save'] == True):
-        pathname = ('%s%s.jpg') % (config.image_save_path, current_frame['time'].strftime('%Y%m%d%H%M%S%f'))
-        cv2.imwrite(pathname, current_frame['frame']);
+        pathname = ('%s%s.jpg') % (config.image_save_path, current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
+        cv2.imwrite(pathname, current_frame['frame'])
 
     # Send still running notification?
     if (current_frame['time'] > next_still_running_email_time):

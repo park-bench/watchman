@@ -41,6 +41,8 @@ class CloverConfig:
         # Time in seconds since last e-mail triggering motion
         self.stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold')
 
+        self.image_save_throttle_delay = config_helper.verify_number_exists(config_file, 'image_save_throttle_delay')
+
         # Subject for still running notification.
         self.still_running_email_subject = config_helper.verify_string_exists(config_file, 'still_running_email_subject')
         # Maximum time in days before still running notification is sent.

@@ -1,3 +1,9 @@
+clover (0.2) stable; urgency=low
+
+  * Mostly added local save image throttle support.
+
+ -- eviljoel <eviljoel@linux.com>  Tue, 03 Nov 2015 21:49:00 -0600
+
 clover (0.1) stable; urgency=low
 
   * Adding debuild support (painfully).
