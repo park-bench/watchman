@@ -1,3 +1,9 @@
+clover (0.3) stable; urgency=low
+
+  * Fixed signing error with attachment filename.
+
+ -- eviljoel <eviljoel@linux.com>  Mon, 09 Nov 2015 21:14:00 -0600
+
 clover (0.2) stable; urgency=low
 
   * Mostly added local save image throttle support.
