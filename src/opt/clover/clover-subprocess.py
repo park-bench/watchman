@@ -105,7 +105,9 @@ def send_image_emails(message, images):
         # Put it in the format that the mailer expects it
         image_dict = {}
         image_dict['data'] = small_jpeg
-        image_dict['filename'] = '%s-small.jpg' % image['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
+        # Warning: Making this filename too long causes the signature to fail for some unknown 
+        #   reason.
+        image_dict['filename'] = '%s-sm.jpg' % image['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
         jpeg_images.append(image_dict)
 
     del images[:]
