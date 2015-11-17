@@ -19,6 +19,8 @@ import sys
 import timber
 import time
 
+from __future__ import division
+
 print('Loading configuration.')
 config_file = ConfigParser.SafeConfigParser()
 config_file.read('/etc/opt/clover/clover.conf')
@@ -86,18 +88,26 @@ def did_threshold_trigger(start_time, last_frame, current_frame, threshold):
 
 # Send an signed encrypted MIME/PGP e-mail with a message and image attachments.
 #   Images will be resized and compressed before sending.
+# Param config - The application configuation from the configuration file. When we
+#   convert this file to a class, change this to 'this'.
 # Param message - A text message to be displayed in the e-mail.
 # Param images - An array of opencv images that will be sent to the recipients.
-def send_image_emails(message, images):
+def send_image_emails(config, message, images):
 
     jpeg_images = []
 
     # Process all the images
     for image in images:
 
-        # Resize to fit in a hi-def screen
-        # TODO: Don't resize if original resolution is smaller.
-        small_frame = cv2.resize(image['frame'], (1440,1080))
+        # Resize for e-mail or don't resize if images is smaller than desired resolution.
+        desired_image_width = config['email_image_width']  # In pixels
+        current_image_height, current_image_width = image['frame'].shape[0:1]
+        if desired_image_width < current_image_width:
+            # Images are scaled proportionally.
+            desired_image_height = int(desired_image_width * (current_image_height / current_image_width))
+            small_frame = cv2.resize(image['frame'], (desired_image_width, desired_image_height))
+        else:
+            small_frame = image['frame']
 
         # Save the file in memory
         ret, small_jpeg = cv2.imencode('.jpg', small_frame)
@@ -181,7 +191,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
             if (first_email_sent == None):
                 first_email_sent = now
                 saved_frames.append(current_frame)
-                send_image_emails('Motion just detected.', saved_frames)
+                send_image_emails(config, 'Motion just detected.', saved_frames)
 
         # Move the array contents down one, discard the oldest and add the new one
 	if (len(prior_movements)):
@@ -195,7 +205,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     # Send another e-mail after so many seconds
     if (first_email_sent != None and did_threshold_trigger(first_email_sent, last_frame, \
             current_frame, config.second_email_delay)):
-        send_image_emails('Follow up one.', saved_frames)
+        send_image_emails(config, 'Follow up one.', saved_frames)
         second_email_sent = first_email_sent + datetime.timedelta(0, config.second_email_delay)
 
     # Grab images for the third e-mail
@@ -206,7 +216,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     # Send third e-mail after so many seconds
     if (second_email_sent != None and did_threshold_trigger(second_email_sent, last_frame, \
             current_frame, config.third_email_delay)):
-        send_image_emails('Follow up two.', saved_frames)
+        send_image_emails(config, 'Follow up two.', saved_frames)
         last_email_sent = second_email_sent + datetime.timedelta(0, config.third_email_delay)
 
     # Grab images for subsequent e-mails
@@ -217,7 +227,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     # Send subsequent e-mails after so many seconds
     if (last_email_sent != None and did_threshold_trigger(last_email_sent, last_frame, \
             current_frame, config.subsequent_email_delay)):
-        send_image_emails('Continued motion.', saved_frames)
+        send_image_emails(config, 'Continued motion.', saved_frames)
         last_email_sent = last_email_sent + datetime.timedelta(0, config.subsequent_email_delay)
 
     # See if the motion has stopped.
@@ -226,7 +236,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
 
         # Clear out the image buffer if images exist
         if (len(saved_frames) > 0):
-            send_image_emails('Continued motion.', saved_frames)
+            send_image_emails(config, 'Continued motion.', saved_frames)
 
         first_email_sent = None
         second_email_sent = None

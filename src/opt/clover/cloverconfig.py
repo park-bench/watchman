@@ -40,6 +40,9 @@ class CloverConfig:
         self.subsequent_email_delay = config_helper.verify_number_exists(config_file, 'subsequent_email_delay')
         # Time in seconds since last e-mail triggering motion
         self.stop_threshold = config_helper.verify_number_exists(config_file, 'stop_threshold')
+        # The maximum image width for images sent via the e-mail. If the image width is smaller than this value, the image is
+        #   sent as captured. If the image width is larger than this value, the image is scaled proportionally before it is sent.
+        self.email_image_width = config_helper.verify_integer_exists(config_file, 'email_image_width')
 
         self.image_save_throttle_delay = config_helper.verify_number_exists(config_file, 'image_save_throttle_delay')
 
