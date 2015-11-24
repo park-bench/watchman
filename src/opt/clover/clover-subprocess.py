@@ -5,6 +5,8 @@
 # TODO: Consider switching to Python 3 to use more advanced detection algorithms.
 # TODO: Make this file a class
 
+from __future__ import division
+
 #import numpy as np
 import cloverconfig
 import confighelper
@@ -18,8 +20,6 @@ import random
 import sys
 import timber
 import time
-
-from __future__ import division
 
 print('Loading configuration.')
 config_file = ConfigParser.SafeConfigParser()
@@ -98,8 +98,9 @@ def send_image_emails(config, message, images):
     for image in images:
 
         # Resize for e-mail or don't resize if images is smaller than desired resolution.
-        desired_image_width = config['email_image_width']  # In pixels
-        current_image_height, current_image_width = image['frame'].shape[0:1]
+        desired_image_width = config.email_image_width  # In pixels
+        # depth is discarded
+        current_image_height, current_image_width, depth = image['frame'].shape
         if desired_image_width < current_image_width:
             # Images are scaled proportionally.
             desired_image_height = int(desired_image_width * (current_image_height / current_image_width))
@@ -163,7 +164,7 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     logger.trace('absolute_mean_total: {0:.10f}'.format(absolute_mean_total))
 
     # See if there has been enough motion to start sending e-mails. Also, ignore the first few frames.
-    if (frame_count > config['initial_frame_skip_count'] && absolute_mean_total > config.pixel_difference_threshold):
+    if (frame_count > config.initial_frame_skip_count and absolute_mean_total > config.pixel_difference_threshold):
 
         # Obtain the time of the differnce
         now = current_frame['time']

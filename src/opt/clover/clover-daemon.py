@@ -91,12 +91,14 @@ def sig_term_handler(signal, stack_frame):
 signal.signal(signal.SIGTERM, sig_term_handler)
 
 try:
+    selected_device = '/dev/video%d' % video_device_number
+
     # Loop forever
     while 1:   
 
         # Startup the subprocess to that takes photos
         logger.info("Starting clover subprocess with device %s." % selected_device)
-        clover_subprocess = subprocess.Popen([subprocess_pathname, video_device_number])
+        clover_subprocess = subprocess.Popen([subprocess_pathname, '%d' % video_device_number])
 
         # Loop while the device exists
         while len(glob.glob(selected_device)) == 1 and clover_subprocess.poll() == None:
