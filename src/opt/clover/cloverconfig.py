@@ -19,6 +19,10 @@ class CloverConfig:
         config_helper.verify_string_exists(config_file, 'subprocess_log_file')
         config_helper.verify_string_exists(config_file, 'subprocess_log_level')
 
+        # Skips this many frames before detecting motion. Gives the camera a chance to warm up.
+        #   Set to zero to disable.
+        self.initial_frame_skip_count = config_helper.verify_integer_exists(config_file, 'initial_frame_skip_count')
+
         self.image_save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
 
         # Subject on motion detection e-mails

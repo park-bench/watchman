@@ -65,8 +65,6 @@ def capture_frame(capture_device):
     
 
 # Stores current_frame in saves_frame frame array if the threshold has been crossed.
-# TODO: pass in the last time an image was saved via this method, check if 1s has passed
-#       before saving the image again.
 def store_frames_on_threshold(saved_frames, start_time, last_frame, current_frame, thresholds):
     for threshold in thresholds:
         if (did_threshold_trigger(start_time, last_frame, current_frame, threshold)):
@@ -136,9 +134,13 @@ current_frame = capture_frame(capture_device)  # Capture the first frame
 last_image_save_time = current_frame['time']
 next_still_running_email_time = current_frame['time'] + \
         datetime.timedelta(seconds=random.uniform(0, config.still_running_email_max_delay * 86400))
+frame_count = 0
 
 # Sometimes we run this program interactively for debugging purposes.
 while(cv2.waitKey(1) & 0xFF != ord('q')):
+
+    # TODO: Verify there is no wrap around in python
+    frame_count = frame_count + 1
 
     last_frame = current_frame
 
@@ -160,8 +162,8 @@ while(cv2.waitKey(1) & 0xFF != ord('q')):
     #logger.debug('difference: %s' % str(difference))
     logger.trace('absolute_mean_total: {0:.10f}'.format(absolute_mean_total))
 
-    # See if there has been enough motion to start sending e-mails
-    if (absolute_mean_total > config.pixel_difference_threshold):
+    # See if there has been enough motion to start sending e-mails. Also, ignore the first few frames.
+    if (frame_count > config['initial_frame_skip_count'] && absolute_mean_total > config.pixel_difference_threshold):
 
         # Obtain the time of the differnce
         now = current_frame['time']
