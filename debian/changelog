@@ -1,3 +1,9 @@
+clover (0.4) stable; urgency=low
+
+  * Added additional configuration options including one to specify the video device.
+
+ -- eviljoel <eviljoel@linux.com>  Mon, 23 Nov 2015 21:15:00 -0600
+
 clover (0.3) stable; urgency=low
 
   * Fixed signing error with attachment filename.

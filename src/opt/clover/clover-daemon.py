@@ -32,15 +32,9 @@ subprocess_pathname = config_helper.verify_string_exists(config_file, 'subproces
 #   with the subprocess configuration.
 cloverconfig.CloverConfig(config_file)
 
-# We actually do care about this option. Basically, this option exists to ignore built in 
-#   cameras on the laptops we use to test with.
-ignored_devices = config_helper.get_string_if_exists(config_file, 'ignored_devices')
-if(ignored_devices is not None):
-    ignored_device_list = ignored_devices.split(',')
-    logger.trace('Ignored devices!')
-else:
-    ignored_device_list = []
-    logger.trace('No ignored devices!  Yay!')
+# The device we want to capture video with.
+# TODO: Consider validating for a malicious path.
+video_device_number = config_helper.verify_integer_exists(config_file, 'video_device_number')
 
 # TODO: Move this to common library.
 def daemonize():
@@ -97,31 +91,12 @@ def sig_term_handler(signal, stack_frame):
 signal.signal(signal.SIGTERM, sig_term_handler)
 
 try:
-    # There is nothing in OpenCV to detect if a device is removed. This forces us to use platform
-    #   specific methods.
-    video_devices = glob.glob("/dev/video[0-9]")
-    video_devices.sort(reverse=True)
-
-    # TODO: if an ignored device is not in the list it crashes, fix this
-    # TODO: Right now the camera has to be plugged in when the daemon starts.
-    #   If no devices are available when selected_device is set, assume the
-    #   device number is video_devices[-1][-1] + 1 but grab this value before the
-    #   ignored_devices list is evaluated. If ignored_devices_list is empty at this
-    #   point, set selected_device to 0.
-    # Remove each device in ignored_devices in video_devices
-    for name in ignored_device_list:
-        video_devices.remove(name)
-        logger.info('Ignoring device %s.' % name)
-
-    selected_device = video_devices[0]
-    device_number = selected_device[-1] 
-
     # Loop forever
     while 1:   
 
         # Startup the subprocess to that takes photos
         logger.info("Starting clover subprocess with device %s." % selected_device)
-        clover_subprocess = subprocess.Popen([subprocess_pathname, device_number])
+        clover_subprocess = subprocess.Popen([subprocess_pathname, video_device_number])
 
         # Loop while the device exists
         while len(glob.glob(selected_device)) == 1 and clover_subprocess.poll() == None:
