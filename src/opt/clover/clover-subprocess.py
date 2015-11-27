@@ -140,7 +140,9 @@ frame_count = 0
 # Sometimes we run this program interactively for debugging purposes.
 while(cv2.waitKey(1) & 0xFF != ord('q')):
 
-    # TODO: Verify there is no wrap around in python
+    # This will never wrap around. If there is a frame every millisecond, it would take
+    #   millions of years for this value to exceed a 64 bit int, and even if this value
+    #   is exceeded, it converts to an "unlimited" long.
     frame_count = frame_count + 1
 
     last_frame = current_frame
