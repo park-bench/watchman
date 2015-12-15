@@ -56,9 +56,9 @@ class CloverSubprocess:
         try:
             self.capture_device = cv2.VideoCapture(self.video_device_number)  # Open the camera
 
-            current_frame = self._capture_frame(capture_device)  # Capture the first frame
-            last_image_save_time = current_frame['time']
-            self._calculate_still_running_email_time()
+            current_frame = self._capture_frame()  # Capture the first frame
+            self.last_image_save_time = current_frame['time']
+            self._calculate_still_running_email_time(current_frame)
             frame_count = 0
 
             # Sometimes we run this program interactively for debugging purposes.
@@ -71,7 +71,7 @@ class CloverSubprocess:
 
                 last_frame = current_frame
 
-                current_frame = self._capture_frame(capture_device)  # Read the next frame
+                current_frame = self._capture_frame()  # Read the next frame
      
                 abs_diff_mean_total = self._calculate_absolute_difference_mean_total(current_frame, \
                     last_frame)
@@ -141,7 +141,7 @@ class CloverSubprocess:
 
         finally:
             # Clean up
-            capture_device.release()
+            self.capture_device.release()
             cv2.destroyAllWindows()  # Again for interactive debugging.
 
 
@@ -186,7 +186,7 @@ class CloverSubprocess:
                 self.logger.trace('Image marked for local save at %s.' % \
                     current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
                 current_frame['save'] = True
-                this.last_image_save_time = current_frame['time']
+                self.last_image_save_time = current_frame['time']
 
             # See if there has been another difference in the last second
             prior_movements_iterator = iter(self.prior_movements)
@@ -224,11 +224,11 @@ class CloverSubprocess:
             self.logger.info('Sending still running notification e-mail.')
             gpgmailqueue.send(body)
 
-            self._calculate_still_running_email_time()
+            self._calculate_still_running_email_time(current_frame)
 
 
     # TODO: Documentation
-    def _calculate_still_running_email_time(self):
+    def _calculate_still_running_email_time(self, current_frame):
         # Convert still_running_email_max_delay to seconds
         self.next_still_running_email_time = current_frame['time'] + \
             datetime.timedelta(seconds=random.uniform(0, \
@@ -237,15 +237,15 @@ class CloverSubprocess:
 
     # Captures a frame, performs actions necessary for each frame, and stores the data
     #   in a frame dictionary.
-    def _capture_frame(self, capture_device):
-        return_value, image = capture_device.read()
+    def _capture_frame(self):
+        return_value, image = self.capture_device.read()
 
         frame_dict = {}
         frame_dict['time'] = datetime.datetime.now()
         frame_dict['image'] = image 
         # Remove the 'background'.  Basically this removes noise.
-        frame_dict['subtracted_frame'] = self.subtractor.apply(frame)
-        #frame_dict['subtracted_frame'] = cv2.morphologyEx(frame_dict['subtracted_frame'], \
+        frame_dict['subtracted_image'] = self.subtractor.apply(image)
+        #frame_dict['subtracted_image'] = cv2.morphologyEx(frame_dict['subtracted_image'], \
         #    cv2.MORPH_OPEN, kernel)
         frame_dict['save'] = False
         return frame_dict
@@ -302,7 +302,7 @@ class CloverSubprocess:
             image_dict['data'] = small_jpeg
             # Warning: Making this filename too long causes the signature to fail for some unknown 
             #   reason.
-            image_dict['filename'] = '%s-sm.jpg' % image['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
+            image_dict['filename'] = '%s-sm.jpg' % frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
             jpeg_images.append(image_dict)
 
         del images[:]
