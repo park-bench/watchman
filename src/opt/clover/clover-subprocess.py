@@ -43,9 +43,9 @@ class CloverSubprocess:
         self.email_frames = []
         self.prior_movements = [None] * self.config.prior_movements_per_threshold
 
-        self.first_email_sent = None
-        self.second_email_sent = None
-        self.last_email_sent = None
+        self.first_motion_email_sent = None
+        self.second_motion_email_sent = None
+        self.last_motion_email_sent = None
         self.last_trigger_motion = None
 
         self.video_device_number = int(sys.argv[1])
@@ -57,8 +57,10 @@ class CloverSubprocess:
             self.capture_device = cv2.VideoCapture(self.video_device_number)  # Open the camera
 
             current_frame = self._capture_frame()  # Capture the first frame
+            # These next couple lines are not exactly accurate, but they will do for now.
             self.last_image_save_time = current_frame['time']
-            self._calculate_still_running_email_time(current_frame)
+            self.last_email_sent_time = current_frame['time']  # All e-mails, not just motion.
+            self._calculate_still_running_email_delay()
             frame_count = 0
 
             # Sometimes we run this program interactively for debugging purposes.
@@ -79,42 +81,42 @@ class CloverSubprocess:
                 self._detect_motion(frame_count, abs_diff_mean_total, current_frame)
 
                 # Grab images for the second e-mail
-                if (self.first_email_sent != None):
-                    self._store_email_frames_on_threshold(self.first_email_sent, \
+                if (self.first_motion_email_sent != None):
+                    self._store_email_frames_on_threshold(self.first_motion_email_sent, \
                             last_frame, current_frame, self.config.second_email_image_save_times)
 
                 # Send another e-mail after so many seconds
-                if (self.first_email_sent != None and \
-                        self._did_threshold_trigger(self.first_email_sent, \
+                if (self.first_motion_email_sent != None and \
+                        self._did_threshold_trigger(self.first_motion_email_sent, \
                         last_frame, current_frame, self.config.second_email_delay)):
-                    self._send_image_emails('Follow up one.')
-                    self.second_email_sent = self.first_email_sent + datetime.timedelta(0, \
+                    self._send_image_emails('Follow up one.', current_frame)
+                    self.second_motion_email_sent = self.first_motion_email_sent + datetime.timedelta(0, \
                         self.config.second_email_delay)
 
                 # Grab images for the third e-mail
-                if (self.second_email_sent != None):
-                    self._store_email_frames_on_threshold(self.second_email_sent, \
+                if (self.second_motion_email_sent != None):
+                    self._store_email_frames_on_threshold(self.second_motion_email_sent, \
                             last_frame, current_frame, self.config.third_email_image_save_times)
 
                 # Send third e-mail after so many seconds
-                if (self.second_email_sent != None and \
-                        self._did_threshold_trigger(self.second_email_sent, \
+                if (self.second_motion_email_sent != None and \
+                        self._did_threshold_trigger(self.second_motion_email_sent, \
                         last_frame, current_frame, self.config.third_email_delay)):
-                    self._send_image_emails('Follow up two.')
-                    self.last_email_sent = self.second_email_sent + datetime.timedelta(0, \
+                    self._send_image_emails('Follow up two.', current_frame)
+                    self.last_motion_email_sent = self.second_motion_email_sent + datetime.timedelta(0, \
                         self.config.third_email_delay)
 
                 # Grab images for subsequent e-mails
-                if (self.last_email_sent != None):
-                    self._store_email_frames_on_threshold(self.last_email_sent, \
+                if (self.last_motion_email_sent != None):
+                    self._store_email_frames_on_threshold(self.last_motion_email_sent, \
                         last_frame, current_frame, self.config.subsequent_email_image_save_times)
 
                 # Send subsequent e-mails after so many seconds
-                if (self.last_email_sent != None and \
-                        self._did_threshold_trigger(self.last_email_sent, last_frame, \
+                if (self.last_motion_email_sent != None and \
+                        self._did_threshold_trigger(self.last_motion_email_sent, last_frame, \
                         current_frame, self.config.subsequent_email_delay)):
-                    self._send_image_emails('Continued motion.')
-                    self.last_email_sent = self.last_email_sent + datetime.timedelta(0, \
+                    self._send_image_emails('Continued motion.', current_frame)
+                    self.last_motion_email_sent = self.last_motion_email_sent + datetime.timedelta(0, \
                         self.config.subsequent_email_delay)
 
                 # See if the motion has stopped.
@@ -124,11 +126,11 @@ class CloverSubprocess:
 
                     # Clear out the image buffer if images exist
                     if (len(self.email_frames) > 0):
-                        self._send_image_emails('Continued motion.')
+                        self._send_image_emails('Continued motion.', current_frame)
 
-                    self.first_email_sent = None
-                    self.second_email_sent = None
-                    self.last_email_sent = None
+                    self.first_motion_email_sent = None
+                    self.second_motion_email_sent = None
+                    self.last_motion_email_sent = None
                     self.last_trigger_motion = None
 
                 # Save the image?
@@ -145,7 +147,11 @@ class CloverSubprocess:
             cv2.destroyAllWindows()  # Again for interactive debugging.
 
 
-    # TODO: Document
+    # Finds the summation of the absolute mean value of each channel from the difference of
+    #   the two prior background subtracted images. (If you don't understand what this means, 
+    #   read the code.) This seems to provide a pretty good value that we can use to determine
+    #   if there has been motion when compared against some threshold given the environment is
+    #   sufficiently lit.
     def _calculate_absolute_difference_mean_total(self, current_frame, last_frame):
 
         # Find the difference between the two subtracted images
@@ -202,20 +208,24 @@ class CloverSubprocess:
             if (prior_movement_time == 'End'):
                 #self.logger.debug('Motion Detected')
                 self.last_trigger_motion = now
-                if (self.first_email_sent == None):
-                    self.first_email_sent = now
+                if (self.first_motion_email_sent == None):
+                    self.first_motion_email_sent = now
                     self.email_frames.append(current_frame)
-                    self._send_image_emails('Motion just detected.')
+                    # TODO: This first image consistently only shows the door starting to move.
+                    #   We should delay the first e-mail image maybe by about 1.5 seconds.
+                    self._send_image_emails('Motion just detected.', current_frame)
 
             # Move the array contents down one, discard the oldest and add the new one
             if (len(self.prior_movements)):
                 self.prior_movements = [now] + self.prior_movements[:-1]
 
 
-    # Send still running notification?
+    # Sends a still running notifcation e-mail if no e-mail has been sent in a while. 
     def _send_still_running_notification(self, current_frame):
-        
-        if (current_frame['time'] > self.next_still_running_email_time):
+       
+        if (current_frame['time'] > self.last_email_sent_time + \
+                datetime.timedelta(seconds = self.next_still_running_email_delay)):
+
             body = {}
             body['subject'] = self.config.still_running_email_subject
             body['message'] = 'Clover is still running as of %s.' % \
@@ -224,15 +234,15 @@ class CloverSubprocess:
             self.logger.info('Sending still running notification e-mail.')
             gpgmailqueue.send(body)
 
-            self._calculate_still_running_email_time(current_frame)
+            self.last_email_sent_time = current_frame['time']
+            self._calculate_still_running_email_delay()
 
 
-    # TODO: Documentation
-    def _calculate_still_running_email_time(self, current_frame):
-        # Convert still_running_email_max_delay to seconds
-        self.next_still_running_email_time = current_frame['time'] + \
-            datetime.timedelta(seconds=random.uniform(0, \
-            self.config.still_running_email_max_delay * 86400))
+    # Calculates the number of seconds of e-mail inactivity before sending a "still running" e-mail.
+    def _calculate_still_running_email_delay(self):
+        # Calculate a 'random' value between 0 and still_running_email_max_delay converted to seconds.
+        self.next_still_running_email_delay = random.uniform(0, \
+            self.config.still_running_email_max_delay * 86400)
 
 
     # Captures a frame, performs actions necessary for each frame, and stores the data
@@ -272,10 +282,10 @@ class CloverSubprocess:
 
 
     # Send an signed encrypted MIME/PGP e-mail with a message and image attachments.
-    #   Images will be resized and compressed before sending.
+    #   Images might be resized and compressed before sending.
     # Param message - A text message to be displayed in the e-mail.
-    # Param images - An array of opencv images that will be sent to the recipients.
-    def _send_image_emails(self, message):
+    # Param current_frame - The current frame because it contains the current time.
+    def _send_image_emails(self, message, current_frame):
 
         jpeg_images = []
 
@@ -309,11 +319,14 @@ class CloverSubprocess:
 
         body = {}
         body['subject'] = self.config.motion_detection_email_subject
-        body['message'] = message
+        body['message'] = '%s\n\nE-mail queued at %s.' % \
+                (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
         body['attachments'] = jpeg_images
 
-        self.logger.info('Sending E-mail.')
+        self.logger.info('Sending "%s" e-mail.' % message)
         gpgmailqueue.send(body)
+
+        self.last_email_sent_time = current_frame['time']
 
 
 # TODO: Consider making sure this class owns the process.
