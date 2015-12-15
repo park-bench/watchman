@@ -305,7 +305,7 @@ class CloverSubprocess:
             image_dict['filename'] = '%s-sm.jpg' % frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
             jpeg_images.append(image_dict)
 
-        del images[:]
+        del self.email_frames[:]
 
         body = {}
         body['subject'] = self.config.motion_detection_email_subject
@@ -313,7 +313,7 @@ class CloverSubprocess:
         body['attachments'] = jpeg_images
 
         self.logger.info('Sending E-mail.')
-        self.gpgmailqueue.send(body)
+        gpgmailqueue.send(body)
 
 
 # TODO: Consider making sure this class owns the process.
