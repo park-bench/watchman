@@ -322,7 +322,7 @@ class CloverSubprocess:
 
         body = {}
         body['subject'] = self.config.motion_detection_email_subject
-        body['message'] = '%s\n\nE-mail queued at %s.' % \
+        body['message'] = '%s E-mail queued at %s.' % \
                 (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
         body['attachments'] = jpeg_images
 

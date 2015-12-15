@@ -107,6 +107,8 @@ try:
         # Kill the subprocess so it can be restarted
         try:
             logger.info("Detected device removal. Killing clover subprocess.");
+            # TODO: Send a signal to clover to flush its current e-mail buffer, give it a second
+            #   then do a kill or kill -9.
             clover_subprocess.kill()
         except OSError as e:
             logger.error("Error killing clover subprocess. %s: %s" % \
