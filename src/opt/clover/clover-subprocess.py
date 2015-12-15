@@ -213,6 +213,9 @@ class CloverSubprocess:
                     self.email_frames.append(current_frame)
                     # TODO: This first image consistently only shows the door starting to move.
                     #   We should delay the first e-mail image maybe by about 1.5 seconds.
+                    #   This might be a good time to generalize the sending of e-mails.
+                    #   Also, probably reduce times to remove the last e-mail as it is pretty 
+                    #   useless.
                     self._send_image_emails('Motion just detected.', current_frame)
 
             # Move the array contents down one, discard the oldest and add the new one
