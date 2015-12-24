@@ -33,6 +33,9 @@ class CloverConfig:
         self.prior_movements_per_threshold = config_helper.verify_integer_exists(config_file, 'prior_movements_per_threshold')
         # How much the two frames have to vary to be considered different
         self.pixel_difference_threshold = config_helper.verify_number_exists(config_file, 'pixel_difference_threshold')
+        self.first_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'first_email_image_save_times')
+        # Time in seconds before first e-mail
+        self.first_email_delay = config_helper.verify_number_exists(config_file, 'first_email_delay')
         self.second_email_image_save_times = config_helper.verify_number_list_exists(config_file, 'second_email_image_save_times')
         # Time in seconds since last e-mail
         self.second_email_delay = config_helper.verify_number_exists(config_file, 'second_email_delay')

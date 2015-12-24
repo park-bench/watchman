@@ -164,7 +164,7 @@ class CloverSubprocess:
 
                 self._send_still_running_notification(current_frame)
 
-                self._process_replacement_subtractor(current_frame)
+                self._process_replacement_subtractor(last_frame, current_frame)
 
         finally:
             # Clean up
@@ -370,7 +370,7 @@ class CloverSubprocess:
     def _process_replacement_subtractor(self, last_frame, current_frame):
 
         # If motion is no longer detected, remove the replacement subtractor.
-        if self.first_tigger_motion == None:
+        if self.first_trigger_motion == None:
             self.replacement_subtractor = None
             self.subtractor_motion_start_time = None
 
@@ -384,7 +384,7 @@ class CloverSubprocess:
  
         # See if enough time has passed since first motion detection to create a replacement
         #   background subtractor.
-        if self.first_trigger_motion <> None and self._did_threshold_trigger(self.subtractor_motion_start_time,
+        if self.first_trigger_motion <> None and self._did_threshold_trigger(self.subtractor_motion_start_time, \
                 last_frame, current_frame, self.config.replacement_subtractor_creation_threshold):
             self.logger.info('Creating replacement background subtractor.')
             self.replacement_subtractor = self._create_background_subtractor()
@@ -392,12 +392,12 @@ class CloverSubprocess:
 
         # Collect a certain number of frames before we replace the main subtractor. Use
         #   the same number of frames used to initiate the main subtractor on program start.
-        if self.replacement_subtractor <> None and 
+        if self.replacement_subtractor <> None and \
                 self.replacement_subtractor_frame_count > self.config.initial_frame_skip_count:
             self.logger.info('Replacing main background subtractor.')
             self.subtractor = self.replacement_subtractor
             self.replacement_subtractor = None
-            self.subtractor_motion_start_time = 0
+            self.subtractor_motion_start_time = current_frame['time']
 
 
     # Creates and returns a background subtractor.
