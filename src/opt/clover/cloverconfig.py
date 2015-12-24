@@ -54,3 +54,6 @@ class CloverConfig:
         self.still_running_email_subject = config_helper.verify_string_exists(config_file, 'still_running_email_subject')
         # Maximum time in days before still running notification is sent.
         self.still_running_email_max_delay = config_helper.verify_number_exists(config_file, 'still_running_email_max_delay')
+
+        # Number of seconds until subtractor is replaced during a motion detection period.
+        self.replacement_subtractor_creation_threshold = config_helper.verify_number_exists(config_file, 'replacement_subtractor_creation_threshold')

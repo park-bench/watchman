@@ -1,3 +1,9 @@
+clover (0.6) stable; urgency=low
+
+  * Added emergency code to replace background subtractor after a delay.
+
+ -- eviljoel <eviljoel@linux.com>  Wed, 23 Dec 2015 20:28:00 -0600
+
 clover (0.5) stable; urgency=low
 
   * Restructured the code to make it more maintainable.

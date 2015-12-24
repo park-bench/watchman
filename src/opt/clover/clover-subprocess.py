@@ -2,7 +2,6 @@
 
 # TODO: Consider detecting and sending the most interesting images.
 # TODO: Consider using facial detection.
-# TODO: Consider switching to Python 3 to use more advanced background subtraction algorithms.
 
 from __future__ import division
 
@@ -37,8 +36,11 @@ class CloverSubprocess:
 
         self.config = cloverconfig.CloverConfig(config_file)
 
-        self.subtractor = cv2.BackgroundSubtractorMOG()  # Can use different subtractors
-        #self.subtractor = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+        self.subtractor = self._create_background_subtractor()
+        # TODO: See if there is a better option than to create another background subtractor.
+        self.replacement_subtractor = None
+        self.replacement_subtractor_frame_count = 0
+        self.subtractor_motion_start_time = None
 
         self.email_frames = []
         self.prior_movements = [None] * self.config.prior_movements_per_threshold
@@ -76,12 +78,13 @@ class CloverSubprocess:
 
                 current_frame = self._capture_frame()  # Read the next frame
      
-                abs_diff_mean_total = self._calculate_absolute_difference_mean_total(current_frame, \
-                    last_frame)
+                self._calculate_absolute_difference_mean_total(current_frame, last_frame)
 
-                self._detect_motion(frame_count, abs_diff_mean_total, current_frame)
+                self._detect_motion(frame_count, current_frame)
 
-                # TODO: The following shouldn't always return. :-(
+                # TODO: The following code and comments are half baked ideas. I need to fix something 
+                #   now so I'll leave them commented.
+                # TODO: The following shouldn't always return. Maybe return by reference?
                 # TODO: self.first_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
                 # TODO: self.second_motion_email_sent = self._processInitialEmails(self.second_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
                 # TODO: self.third_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
@@ -161,6 +164,8 @@ class CloverSubprocess:
 
                 self._send_still_running_notification(current_frame)
 
+                self._process_replacement_subtractor(current_frame)
+
         finally:
             # Clean up
             self.capture_device.release()
@@ -189,16 +194,16 @@ class CloverSubprocess:
         
         self.logger.trace('abs_diff_mean_total: {0:.10f}'.format(abs_diff_mean_total))
 
-        return abs_diff_mean_total
+        current_frame['abs_diff_mean_total'] = abs_diff_mean_total
  
 
     # See if there has been enough motion to start sending e-mails or to save an image. Also, ignore 
     #   the first few frames. Initiates the sending of the first e-mail and marks images to be saved
     #   locally.
-    def _detect_motion(self, frame_count, abs_diff_mean_total, current_frame):
+    def _detect_motion(self, frame_count, current_frame):
         
         if (frame_count > self.config.initial_frame_skip_count and \
-                abs_diff_mean_total > self.config.pixel_difference_threshold):
+                current_frame['abs_diff_mean_total'] > self.config.pixel_difference_threshold):
 
             # Obtain the time of the differnce
             now = current_frame['time']
@@ -230,13 +235,9 @@ class CloverSubprocess:
                 self.last_trigger_motion = now
                 if (self.first_trigger_motion == None):
                     self.first_trigger_motion = now
-                    self.email_frames.append(current_frame)
-                    # TODO: This first image consistently only shows the door starting to move.
-                    #   We should delay the first e-mail image maybe by about 1.5 seconds.
-                    #   This might be a good time to generalize the sending of e-mails.
-                    #   Also, probably reduce times to remove the last e-mail as it is pretty 
-                    #   useless.
-                    self._send_image_emails('Motion just detected.', current_frame)
+                    # TODO: Remove if setting first threshold to 0 works.
+                    #self.email_frames.append(current_frame)
+                    #current_frame['save'] = True
 
             # Move the array contents down one, discard the oldest and add the new one
             if (len(self.prior_movements)):
@@ -277,9 +278,18 @@ class CloverSubprocess:
         frame_dict['time'] = datetime.datetime.now()
         frame_dict['image'] = image 
         # Remove the 'background'.  Basically this removes noise.
+        # TODO: I might have found the solution to our background subtractor problem:
+        #   https://stackoverflow.com/questions/26741081/opencv-python-cv2-backgroundsubtractor-parameters
+        #   Consider explicitly setting learningRate when apply is called.
         frame_dict['subtracted_image'] = self.subtractor.apply(image)
         #frame_dict['subtracted_image'] = cv2.morphologyEx(frame_dict['subtracted_image'], \
         #    cv2.MORPH_OPEN, kernel)
+ 
+        # If a replacement subtractor exists, also apply to that subtractor. We don't
+        #   need to save the result however.
+        if self.replacement_subtractor <> None:
+            self.replacement_subtractor.apply(image)
+
         frame_dict['save'] = False
         return frame_dict
  
@@ -295,11 +305,12 @@ class CloverSubprocess:
 
     # Compares previous and current frame times against a start time to see if enough
     #   time as elapsed to trigger a threshold.
+    # TODO: Consider returning False if start_time is null.
     def _did_threshold_trigger(self, start_time, last_frame, current_frame, threshold):
         threshold_triggered = False
         last_frame_difference = (last_frame['time'] - start_time).total_seconds()
         current_frame_difference = (current_frame['time'] - start_time).total_seconds()
-        if (last_frame_difference < threshold and current_frame_difference > threshold):
+        if (last_frame_difference < threshold and current_frame_difference >= threshold):
             threshold_triggered = True
         return threshold_triggered
 
@@ -342,14 +353,60 @@ class CloverSubprocess:
 
         body = {}
         body['subject'] = self.config.motion_detection_email_subject
-        body['message'] = '%s E-mail queued at %s.' % \
-                (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
+        body['message'] = '%s E-mail queued at %s. Current abs_diff_mean_total: %f' % \
+                (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
+                current_frame['abs_diff_mean_total'])
         body['attachments'] = jpeg_images
 
         self.logger.info('Sending "%s" e-mail.' % message)
         gpgmailqueue.send(body)
 
         self.last_email_sent_time = current_frame['time']
+
+
+    # Creates the replacement subtractor and replaces the main subtractor after appropriate delays.
+    # TODO: This is probably temporary code to quickly get around a bug. This is why this code is
+    #   so self contained.
+    def _process_replacement_subtractor(self, last_frame, current_frame):
+
+        # If motion is no longer detected, remove the replacement subtractor.
+        if self.first_tigger_motion == None:
+            self.replacement_subtractor = None
+            self.subtractor_motion_start_time = None
+
+        # Start the subtractor motion start time
+        if self.first_trigger_motion <> None and self.subtractor_motion_start_time == None:
+            self.subtractor_motion_start_time = self.first_trigger_motion
+
+        # Increment the replacement subtractor frame cound if it has processed frames.
+        if self.replacement_subtractor <> None:
+            self.replacement_subtractor_frame_count += 1
+ 
+        # See if enough time has passed since first motion detection to create a replacement
+        #   background subtractor.
+        if self.first_trigger_motion <> None and self._did_threshold_trigger(self.subtractor_motion_start_time,
+                last_frame, current_frame, self.config.replacement_subtractor_creation_threshold):
+            self.logger.info('Creating replacement background subtractor.')
+            self.replacement_subtractor = self._create_background_subtractor()
+            self.replacement_subtractor_frame_count = 0
+
+        # Collect a certain number of frames before we replace the main subtractor. Use
+        #   the same number of frames used to initiate the main subtractor on program start.
+        if self.replacement_subtractor <> None and 
+                self.replacement_subtractor_frame_count > self.config.initial_frame_skip_count:
+            self.logger.info('Replacing main background subtractor.')
+            self.subtractor = self.replacement_subtractor
+            self.replacement_subtractor = None
+            self.subtractor_motion_start_time = 0
+
+
+    # Creates and returns a background subtractor.
+    # I typically hate one line methods, but it is used in two places and is likely to change.
+    # TODO: Consider switching to Python 3 to use more advanced background subtraction algorithms.
+    def _create_background_subtractor(self):
+        
+        return cv2.BackgroundSubtractorMOG()
+        #return cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
 
 # TODO: Consider making sure this class owns the process.
