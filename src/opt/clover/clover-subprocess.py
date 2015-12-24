@@ -2,7 +2,7 @@
 
 # TODO: Consider detecting and sending the most interesting images.
 # TODO: Consider using facial detection.
-# TODO: Consider switching to Python 3 to use more advanced detection algorithms.
+# TODO: Consider switching to Python 3 to use more advanced background subtraction algorithms.
 
 from __future__ import division
 
@@ -43,6 +43,7 @@ class CloverSubprocess:
         self.email_frames = []
         self.prior_movements = [None] * self.config.prior_movements_per_threshold
 
+        self.first_trigger_motion = None
         self.first_motion_email_sent = None
         self.second_motion_email_sent = None
         self.last_motion_email_sent = None
@@ -80,6 +81,24 @@ class CloverSubprocess:
 
                 self._detect_motion(frame_count, abs_diff_mean_total, current_frame)
 
+                # TODO: The following shouldn't always return. :-(
+                # TODO: self.first_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
+                # TODO: self.second_motion_email_sent = self._processInitialEmails(self.second_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
+                # TODO: self.third_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
+
+                # Grab images for the first e-mail
+                if (self.first_trigger_motion != None):
+                    self._store_email_frames_on_threshold(self.first_trigger_motion, \
+                            last_frame, current_frame, self.config.first_email_image_save_times)
+
+                # Send first e-mail after so many seconds
+                if (self.first_trigger_motion != None and \
+                        self._did_threshold_trigger(self.first_trigger_motion, \
+                        last_frame, current_frame, self.config.first_email_delay)):
+                    self._send_image_emails('Motion just detected.', current_frame)
+                    self.first_motion_email_sent = self.first_trigger_motion + datetime.timedelta(0, \
+                        self.config.first_email_delay)
+ 
                 # Grab images for the second e-mail
                 if (self.first_motion_email_sent != None):
                     self._store_email_frames_on_threshold(self.first_motion_email_sent, \
@@ -128,6 +147,7 @@ class CloverSubprocess:
                     if (len(self.email_frames) > 0):
                         self._send_image_emails('Continued motion.', current_frame)
 
+                    self.first_trigger_motion = None
                     self.first_motion_email_sent = None
                     self.second_motion_email_sent = None
                     self.last_motion_email_sent = None
@@ -208,8 +228,8 @@ class CloverSubprocess:
             if (prior_movement_time == 'End'):
                 #self.logger.debug('Motion Detected')
                 self.last_trigger_motion = now
-                if (self.first_motion_email_sent == None):
-                    self.first_motion_email_sent = now
+                if (self.first_trigger_motion == None):
+                    self.first_trigger_motion = now
                     self.email_frames.append(current_frame)
                     # TODO: This first image consistently only shows the door starting to move.
                     #   We should delay the first e-mail image maybe by about 1.5 seconds.
