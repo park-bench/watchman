@@ -171,6 +171,8 @@ class CloverSubprocess:
             self.capture_device.release()
             cv2.destroyAllWindows()  # Again for interactive debugging.
 
+        # TODO: Add a catch block here
+
 
     # Finds the summation of the absolute mean value of each channel from the difference of
     #   the two prior background subtracted images. (If you don't understand what this means, 
