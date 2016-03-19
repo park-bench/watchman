@@ -11,7 +11,7 @@ import ConfigParser
 import cv2
 import datetime
 import glob
-import gpgmailqueue
+import gpgmailmessage
 import math
 import random
 import sys
@@ -250,13 +250,13 @@ class CloverSubprocess:
         if (current_frame['time'] > self.last_email_sent_time + \
                 datetime.timedelta(seconds = self.next_still_running_email_delay)):
 
-            body = {}
-            body['subject'] = self.config.still_running_email_subject
-            body['message'] = 'Clover is still running as of %s.' % \
-                current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f')
+            email = gpgmailmessage.GpgMailMessage()
+            email.set_subject(self.config.still_running_email_subject)
+            email.set_body('Clover is still running as of %s.' % \
+                current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
 
             self.logger.info('Sending still running notification e-mail.')
-            gpgmailqueue.send(body)
+            email.save()
 
             self.last_email_sent_time = current_frame['time']
             self._calculate_still_running_email_delay()
@@ -321,7 +321,12 @@ class CloverSubprocess:
     # Param current_frame - The current frame because it contains the current time.
     def _send_image_emails(self, message, current_frame):
 
-        jpeg_images = []
+        email = gpgmailmessage.GpgMailMessage()
+
+        email.set_subject(self.config_motion_detected_email_subject)
+        email.set_body('%s E-mail queued at %s. Current abs_diff_mean_total: %f' % \
+                (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
+                current_frame['abs_diff_mean_total']))
 
         # Process all the frames
         for frame in self.email_frames:
@@ -341,25 +346,16 @@ class CloverSubprocess:
             # Save the file in memory
             ret, small_jpeg = cv2.imencode('.jpg', small_frame)
 
-            # Put it in the format that the mailer expects it
-            image_dict = {}
-            image_dict['data'] = small_jpeg
+            # Attach the image to the email message
             # Warning: Making this filename too long causes the signature to fail for some unknown 
             #   reason.
-            image_dict['filename'] = '%s-sm.jpg' % frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
-            jpeg_images.append(image_dict)
+            image_filename = '%s-sm.jpg' % frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f')
+            email.add_attachment(image_filename, small_jpeg)
 
         del self.email_frames[:]
 
-        body = {}
-        body['subject'] = self.config.motion_detection_email_subject
-        body['message'] = '%s E-mail queued at %s. Current abs_diff_mean_total: %f' % \
-                (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
-                current_frame['abs_diff_mean_total'])
-        body['attachments'] = jpeg_images
-
         self.logger.info('Sending "%s" e-mail.' % message)
-        gpgmailqueue.send(body)
+        email.save()
 
         self.last_email_sent_time = current_frame['time']
 
