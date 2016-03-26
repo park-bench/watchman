@@ -6,6 +6,6 @@ Maintainer: eviljoel, Andrew Klapp
 Standards-Version: 3.9.6.1
 
 Package: clover
-Architecture: any
+Architecture: all
 Depends: confighelper,gpgmailer,timber,python-opencv
 Description: Our eyes when we are not there.
