@@ -85,9 +85,9 @@ class CloverSubprocess:
                 # TODO: The following code and comments are half baked ideas. I need to fix something 
                 #   now so I'll leave them commented.
                 # TODO: The following shouldn't always return. Maybe return by reference?
-                # TODO: self.first_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
-                # TODO: self.second_motion_email_sent = self._processInitialEmails(self.second_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
-                # TODO: self.third_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, 'Motion just detected.')
+                # TODO: self.first_motion_email_sent = self._processInitialEmails(self.first_trigger_motion, self.first_email_image_save_times, last_frame, current_frame, 'Motion just detected.')
+                # TODO: self.second_motion_email_sent = self._processInitialEmails(self.second_trigger_motion, self.second_email_image_save_times, last_frame, current_frame, 'Follow up one.')
+                # TODO: self.third_motion_email_sent = self._processInitialEmails(self.third_trigger_motion, self.third_email_image_save_times, last_frame, current_frame, 'Follow up two.')
 
                 # Grab images for the first e-mail
                 if (self.first_trigger_motion != None):
@@ -242,6 +242,27 @@ class CloverSubprocess:
             # Move the array contents down one, discard the oldest and add the new one
             if (len(self.prior_movements)):
                 self.prior_movements = [now] + self.prior_movements[:-1]
+
+
+    # TODO: This is a work in progress.
+    def _processInitialEmails(self, period_start_time, email_image_save_times, email_delay, last_frame, current_frame, message):
+
+        email_sent_time = None
+
+        # Grab images for the e-mail
+        if (period_start_time != None):
+            self._store_email_frames_on_threshold(period_start_time, \
+                    last_frame, current_frame, email_image_save_times)
+
+        # Send first e-mail after so many seconds
+        if (period_start_time != None and \
+                self._did_threshold_trigger(period_start_time, \
+                last_frame, current_frame, email_delay)):
+            self._send_image_emails(message, current_frame)
+            email_sent_time = period_start_time + datetime.timedelta(0, \
+                email_delay)
+
+        return email_sent_time
 
 
     # Sends a still running notifcation e-mail if no e-mail has been sent in a while. 
