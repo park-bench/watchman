@@ -1,0 +1,95 @@
+# Config file for Clover.
+
+[General]
+
+# Log file for the clover main process.
+main_process_log_file=/var/opt/log/clover.log
+
+# Log level for the clover main process.
+main_process_log_level=info
+
+# The camera video device number to use. (e.g. 0 in /dev/video0)
+video_device_number=0
+
+# Location of the clover subprocess.
+subprocess_pathname=/opt/clover/clover-subprocess.py
+
+# Log file for the clover subprocess.
+subprocess_log_file=/var/opt/log/clover-subprocess.log
+
+# Log level for the clover subprocess.
+subprocess_log_level=info
+
+# Skips this many frames before detecting motion. Gives the camera a chance to warm up.
+#   Set to zero to disable.
+initial_frame_skip_count=5
+
+# Directory to save the images to.
+image_save_path=/var/opt/log/clover/images/
+
+# Subject for e-mails containing images after motion detection. This should probably be
+#   something vague.
+motion_detection_email_subject=Encrypted message from your server.
+
+# Period in seconds to detect prior_movements_per_threshold number of frames before sending
+#   e-mails.
+movement_time_threshold=1.000000
+
+# Number of frames where movement is detected within movement_time_threshold before starting
+#   the e-mail sending processes. Also used to determine if we should continue
+#   sending e-mails.
+prior_movements_per_threshold=0
+
+# Ratio of how much the two subtracted frames have to vary to be considered different.
+pixel_difference_threshold=4.5
+
+# Times after initial motion detection when images are stored to be sent.
+first_email_image_save_times=0,1,2
+
+# Time in seconds after initial motion detection before sending the first e-mail.
+first_email_delay=2
+
+# Comma delimited times after first e-mail that images are stored to be sent.
+second_email_image_save_times=1.25,2.5
+
+# Delay in seconds since first e-mail before sending a second e-mail.
+second_email_delay=2.5
+
+# Times after second e-mail that images are stored to be sent.
+third_email_image_save_times=1.25,2.5,3.75,5
+
+# Time in seconds since second e-mail before sending a third e-mail.
+third_email_delay=5
+
+# Times after third and subsequent e-mails that images are stored to be sent.
+subsequent_email_image_save_times=10,20,30
+
+# Time in seconds since third and subsequent e-mails before sending a forth e-mail and 
+#   subsequent e-mails.
+subsequent_email_delay=30
+
+# The maximum image width for images sent via the e-mail. If the image width is smaller than this value, the image is
+#   sent as captured. If the image width is larger than this value, the image is scaled proportionally before it is sent.
+# 1440 in width is roughly full HD in height assuming images are a 4:3 aspect ratio.
+email_image_width=1440
+
+# Time in seconds since the last motion significant enough to trigger an e-mail (as defined above) 
+#   before stopping the sending of e-mail.
+stop_threshold=30
+
+# Minimum time in seconds between saving images locally. (Images send with e-mails are always saved.)
+#   This helps us not fill up the disk.
+image_save_throttle_delay=1
+
+# Subject for e-mail letting us know that clover is still running. This should probably be something vague.
+still_running_email_subject=Encrypted message from your server.
+
+# Maximum days before still running notification is sent. Half of this is value is the
+#   average number of days before a still running notification is sent. This value is 
+#   used by the subprocess, so anything that causes the subprocess to restart resets
+#   this value. This value is converted to a float before it is used to avoid
+#   only sending on full day increments. Use a float value for reasonable debugging.
+still_running_email_max_delay=7
+
+# Time in seconds during a motion detection period before a background subtractor is replaced.
+replacement_subtractor_creation_threshold=40
