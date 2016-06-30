@@ -3,5 +3,6 @@ debian/clover.debhelper.log
 debian/files
 debian/clover/*
 debian/clover.substvars
+debian/debhelper.log
 src/etc/opt/clover/clover.conf
 *.pyc
