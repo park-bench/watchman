@@ -10,6 +10,7 @@ https://github.com/park-bench/confighelper
 Also depends on our _gpgmailer_ daemon which can be found at
 https://github.com/park-bench/gpgmailer
 
-clover is licensed under the GNU GPLv3.
+clover is licensed under the GNU GPLv3. All source code commits prior to the
+public release are also retroactively licensed under the GNU GPLv3.
 
 Bug fixes are welcome.
