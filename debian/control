@@ -2,10 +2,9 @@ Source: clover
 Section: parkbench
 Priority: required
 Maintainer: eviljoel, Andrew Klapp
-#Build-Depends:
 Standards-Version: 3.9.6.1
 
 Package: clover
 Architecture: all
-Depends: confighelper,gpgmailer,python-timber,python-opencv
+Depends: confighelper,gpgmailer (>=0.7),python-timber,python-opencv
 Description: Our eyes when we are not there.
