@@ -258,7 +258,7 @@ class CloverSubprocess:
                 current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
 
             self.logger.info('Sending still running notification e-mail.')
-            email.save()
+            email.queue_for_sending()
 
             self.last_email_sent_time = current_frame['time']
             self._calculate_still_running_email_delay()
@@ -357,7 +357,7 @@ class CloverSubprocess:
         del self.email_frames[:]
 
         self.logger.info('Sending "%s" e-mail.' % message)
-        email.save()
+        email.queue_for_sending()
 
         self.last_email_sent_time = current_frame['time']
 
