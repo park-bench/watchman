@@ -20,7 +20,7 @@
 
 from __future__ import division
 
-import cloverconfig
+import watchmanconfig
 import confighelper
 import ConfigParser
 import cv2
@@ -33,13 +33,13 @@ import sys
 import timber
 import time
 
-class CloverSubprocess:
+class WatchmanSubprocess:
 
     def __init__(self):
 
         print('Loading configuration.')
         config_file = ConfigParser.SafeConfigParser()
-        config_file.read('/etc/opt/clover/clover.conf')
+        config_file.read('/etc/opt/watchman/watchman.conf')
 
         # Figure out the logging options so that can start before anything else.
         print('Verifying configuration.')
@@ -49,7 +49,7 @@ class CloverSubprocess:
 
         self.logger = timber.get_instance_with_filename(log_file, log_level)
 
-        self.config = cloverconfig.CloverConfig(config_file)
+        self.config = watchmanconfig.WatchmanConfig(config_file)
 
         self.subtractor = self._create_background_subtractor()
         # TODO: See if there is a better option than to create another background subtractor.
@@ -288,7 +288,7 @@ class CloverSubprocess:
 
             body = {}
             body['subject'] = self.config.still_running_email_subject
-            body['message'] = 'Clover is still running as of %s.' % \
+            body['message'] = 'Watchman is still running as of %s.' % \
                 current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f')
 
             self.logger.info('Sending still running notification e-mail.')
@@ -446,5 +446,5 @@ class CloverSubprocess:
 
 
 # TODO: Consider making sure this class owns the process.
-clover_subprocess = CloverSubprocess()
-clover_subprocess.start_loop()
+watchman_subprocess = WatchmanSubprocess()
+watchman_subprocess.start_loop()

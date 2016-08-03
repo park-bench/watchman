@@ -17,9 +17,9 @@ import confighelper
 import ConfigParser
 import timber
 
-class CloverConfig:
+class WatchmanConfig:
 
-    # Reads the clover subprocess configuration and exits the program there is an error.
+    # Reads the watchman subprocess configuration and exits the program there is an error.
     def __init__(self, config_file):
 
         logger = timber.get_instance()

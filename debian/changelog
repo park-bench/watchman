@@ -1,3 +1,9 @@
+watchman (0.7) stable; urgency=low
+
+  * GPLv3 release of clover, now renamed to watchman.
+
+ -- eviljoel <eviljoel@linux.com>  Tue, 02 Aug 2016 18:47:00 -0500
+
 clover (0.6) stable; urgency=low
 
   * Added emergency code to replace background subtractor after a delay.
