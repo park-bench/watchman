@@ -325,7 +325,7 @@ class CloverSubprocess:
 
         email = gpgmailmessage.GpgMailMessage()
 
-        email.set_subject(self.config_motion_detected_email_subject)
+        email.set_subject(self.config.motion_detection_email_subject)
         email.set_body('%s E-mail queued at %s. Current abs_diff_mean_total: %f' % \
                 (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
                 current_frame['abs_diff_mean_total']))

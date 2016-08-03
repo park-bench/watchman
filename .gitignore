@@ -1,6 +1,8 @@
 debian/tmp
 debian/debhelper.log
 debian/files
+debian/clover.substvars
+debian/clover/*
 src/etc/opt/clover/clover.conf
 src/opt/clover/cloverconfig.pyc
 src/opt/clover/confighelper.pyc
