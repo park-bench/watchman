@@ -1,8 +1,8 @@
 debian/tmp
-debian/clover.debhelper.log
+debian/watchman.debhelper.log
 debian/files
-debian/clover/*
-debian/clover.substvars
+debian/watchman/*
+debian/watchman.substvars
 debian/debhelper.log
-src/etc/opt/clover/clover.conf
+src/etc/opt/watchman/watchman.conf
 *.pyc
