@@ -1,23 +1,23 @@
-# Config file for Clover.
+# Config file for Watchman.
 
 [General]
 
-# Log file for the clover main process.
-main_process_log_file=/var/opt/log/clover.log
+# Log file for the watchman main process.
+main_process_log_file=/var/opt/log/watchman.log
 
-# Log level for the clover main process.
+# Log level for the watchman main process.
 main_process_log_level=info
 
 # The camera video device number to use. (e.g. 0 in /dev/video0)
 video_device_number=0
 
-# Location of the clover subprocess.
-subprocess_pathname=/opt/clover/clover-subprocess.py
+# Location of the watchman subprocess.
+subprocess_pathname=/opt/watchman/watchman-subprocess.py
 
-# Log file for the clover subprocess.
-subprocess_log_file=/var/opt/log/clover-subprocess.log
+# Log file for the watchman subprocess.
+subprocess_log_file=/var/opt/log/watchman-subprocess.log
 
-# Log level for the clover subprocess.
+# Log level for the watchman subprocess.
 subprocess_log_level=info
 
 # Skips this many frames before detecting motion. Gives the camera a chance to warm up.
@@ -25,7 +25,7 @@ subprocess_log_level=info
 initial_frame_skip_count=5
 
 # Directory to save the images to.
-image_save_path=/var/opt/log/clover/images/
+image_save_path=/var/opt/log/watchman/images/
 
 # Subject for e-mails containing images after motion detection. This should probably be
 #   something vague.
@@ -81,7 +81,7 @@ stop_threshold=30
 #   This helps us not fill up the disk.
 image_save_throttle_delay=1
 
-# Subject for e-mail letting us know that clover is still running. This should probably be something vague.
+# Subject for e-mail letting us know that watchman is still running. This should probably be something vague.
 still_running_email_subject=Encrypted message from your server.
 
 # Maximum days before still running notification is sent. Half of this is value is the

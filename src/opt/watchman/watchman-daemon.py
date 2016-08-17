@@ -1,6 +1,21 @@
 #!/usr/bin/env python2
 
-import cloverconfig
+# Copyright 2015-2016 Joel Allen Luellwitz and Andrew Klapp
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import watchmanconfig
 import confighelper
 import ConfigParser
 import glob
@@ -12,11 +27,11 @@ import timber
 import time
 import traceback
 
-pid_file = '/var/opt/run/clover.pid'
+pid_file = '/var/opt/run/watchman.pid'
 
 print('Loading configuration.')
 config_file = ConfigParser.RawConfigParser()
-config_file.read('/etc/opt/clover/clover.conf')
+config_file.read('/etc/opt/watchman/watchman.conf')
 
 # Figure out the logging options so that can start before anything else.
 print('Verifying configuration.')
@@ -30,7 +45,7 @@ subprocess_pathname = config_helper.verify_string_exists(config_file, 'subproces
 
 # We don't care what the results are, we just want the program to die if there is an error
 #   with the subprocess configuration.
-cloverconfig.CloverConfig(config_file)
+watchmanconfig.WatchmanConfig(config_file)
 
 # The device we want to capture video with.
 # TODO: Consider validating for a malicious path.
@@ -78,14 +93,14 @@ def daemonize():
     
 daemonize()
 
-clover_subprocess = None
+watchman_subprocess = None
 
 # Quit when SIGTERM is received
 def sig_term_handler(signal, stack_frame):
     logger.fatal("Quitting.")
-    if clover_subprocess <> None:
-        logger.info("Killing clover subprocess.");
-        clover_subprocess.kill()
+    if watchman_subprocess <> None:
+        logger.info("Killing watchman subprocess.");
+        watchman_subprocess.kill()
     sys.exit(0)
 
 signal.signal(signal.SIGTERM, sig_term_handler)
@@ -97,21 +112,21 @@ try:
     while 1:   
 
         # Startup the subprocess to that takes photos
-        logger.info("Starting clover subprocess with device %s." % selected_device)
-        clover_subprocess = subprocess.Popen([subprocess_pathname, '%d' % video_device_number])
+        logger.info("Starting watchman subprocess with device %s." % selected_device)
+        watchman_subprocess = subprocess.Popen([subprocess_pathname, '%d' % video_device_number])
 
         # Loop while the device exists
-        while len(glob.glob(selected_device)) == 1 and clover_subprocess.poll() == None:
+        while len(glob.glob(selected_device)) == 1 and watchman_subprocess.poll() == None:
             time.sleep(.1)
 
         # Kill the subprocess so it can be restarted
         try:
-            logger.info("Detected device removal. Killing clover subprocess.");
-            # TODO: Send a signal to clover to flush its current e-mail buffer, give it a second
+            logger.info("Detected device removal. Killing watchman subprocess.");
+            # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a second
             #   then do a kill or kill -9.
-            clover_subprocess.kill()
+            watchman_subprocess.kill()
         except OSError as e:
-            logger.error("Error killing clover subprocess. %s: %s" % \
+            logger.error("Error killing watchman subprocess. %s: %s" % \
                 (type(e).__name__, e.message))
             logger.error("%s" % traceback.format_exc())
             logger.error("Ignoring.")
@@ -125,7 +140,7 @@ try:
 except Exception as e:
     logger.fatal("Fatal %s: %s" % (type(e).__name__, e.message))
     logger.error("%s" % traceback.format_exc())
-    if clover_subprocess <> None:
-        logger.info("Killing clover subprocess.");
-        clover_subprocess.kill()
+    if watchman_subprocess <> None:
+        logger.info("Killing watchman subprocess.");
+        watchman_subprocess.kill()
     sys.exit(1)

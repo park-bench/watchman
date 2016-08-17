@@ -1,11 +1,26 @@
 #!/usr/bin/env python2
 
+# Copyright 2015-2016 Joel Allen Luellwitz and Andrew Klapp
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 # TODO: Consider detecting and sending the most interesting images.
 # TODO: Consider using facial detection.
 
 from __future__ import division
 
-import cloverconfig
+import watchmanconfig
 import confighelper
 import ConfigParser
 import cv2
@@ -18,13 +33,13 @@ import sys
 import timber
 import time
 
-class CloverSubprocess:
+class WatchmanSubprocess:
 
     def __init__(self):
 
         print('Loading configuration.')
         config_file = ConfigParser.SafeConfigParser()
-        config_file.read('/etc/opt/clover/clover.conf')
+        config_file.read('/etc/opt/watchman/watchman.conf')
 
         # Figure out the logging options so that can start before anything else.
         print('Verifying configuration.')
@@ -34,7 +49,7 @@ class CloverSubprocess:
 
         self.logger = timber.get_instance_with_filename(log_file, log_level)
 
-        self.config = cloverconfig.CloverConfig(config_file)
+        self.config = watchmanconfig.WatchmanConfig(config_file)
 
         self.subtractor = self._create_background_subtractor()
         # TODO: See if there is a better option than to create another background subtractor.
@@ -273,7 +288,7 @@ class CloverSubprocess:
 
             email = gpgmailmessage.GpgMailMessage()
             email.set_subject(self.config.still_running_email_subject)
-            email.set_body('Clover is still running as of %s.' % \
+            email.set_body('Watchman is still running as of %s.' % \
                 current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
 
             self.logger.info('Sending still running notification e-mail.')
@@ -427,5 +442,5 @@ class CloverSubprocess:
 
 
 # TODO: Consider making sure this class owns the process.
-clover_subprocess = CloverSubprocess()
-clover_subprocess.start_loop()
+watchman_subprocess = WatchmanSubprocess()
+watchman_subprocess.start_loop()
