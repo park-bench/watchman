@@ -19,11 +19,11 @@ import watchmanconfig
 import confighelper
 import ConfigParser
 import glob
+import logging
 import os
 import signal
 import subprocess
 import sys
-import timber
 import time
 import traceback
 
@@ -39,7 +39,8 @@ config_helper = confighelper.ConfigHelper()
 log_file = config_helper.verify_string_exists_prelogging(config_file, 'main_process_log_file')
 log_level = config_helper.verify_string_exists_prelogging(config_file, 'main_process_log_level')
 
-logger = timber.get_instance_with_filename(log_file, log_level)
+config_helper.configure_logger(log_file, log_level)
+logger = logging.getLogger()
 
 subprocess_pathname = config_helper.verify_string_exists(config_file, 'subprocess_pathname')
 
@@ -59,7 +60,7 @@ def daemonize():
         if pid > 0:
             sys.exit(0)
     except OSError, e:
-        logger.fatal("Failed to make parent process init: %d (%s)" % (e.errno, e.strerror))
+        logger.critical("Failed to make parent process init: %d (%s)" % (e.errno, e.strerror))
         sys.exit(1)
 
     # TODO: Consider changing these to be more restrictive
@@ -74,7 +75,7 @@ def daemonize():
         if pid > 0:
             sys.exit(0)
     except OSError, e:
-        logger.fatal("Failed to give up session leadership: %d (%s)" % (e.errno, e.strerror))
+        logger.critical("Failed to give up session leadership: %d (%s)" % (e.errno, e.strerror))
         sys.exit(1)
 
     # Redirect standard file descriptors
@@ -97,7 +98,7 @@ watchman_subprocess = None
 
 # Quit when SIGTERM is received
 def sig_term_handler(signal, stack_frame):
-    logger.fatal("Quitting.")
+    logger.critical("Quitting.")
     if watchman_subprocess <> None:
         logger.info("Killing watchman subprocess.");
         watchman_subprocess.kill()
@@ -138,7 +139,7 @@ try:
         logger.info("Detected device insertion.");
 
 except Exception as e:
-    logger.fatal("Fatal %s: %s" % (type(e).__name__, e.message))
+    logger.critical("Fatal %s: %s" % (type(e).__name__, e.message))
     logger.error("%s" % traceback.format_exc())
     if watchman_subprocess <> None:
         logger.info("Killing watchman subprocess.");

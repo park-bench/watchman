@@ -30,7 +30,6 @@ import gpgmailmessage
 import math
 import random
 import sys
-import timber
 import time
 
 class WatchmanSubprocess:
@@ -47,7 +46,8 @@ class WatchmanSubprocess:
         log_file = config_helper.verify_string_exists_prelogging(config_file, 'subprocess_log_file')
         log_level = config_helper.verify_string_exists_prelogging(config_file, 'subprocess_log_level')
 
-        self.logger = timber.get_instance_with_filename(log_file, log_level)
+        config_helper.configure_logger(log_file, log_level)
+        self.logger = logging.getLogger()
 
         self.config = watchmanconfig.WatchmanConfig(config_file)
 

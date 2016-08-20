@@ -1,6 +1,11 @@
-watchman (0.7) stable; urgency=low
+watchman (0.7) UNRELEASED; urgency=low
 
+  [ eviljoel ]
   * GPLv3 release of clover, now renamed to watchman.
+
+  [ Andrew Klapp ]
+  * Removed Timber dependency.
+  * Updated for new confighelper release.
 
  -- eviljoel <eviljoel@linux.com>  Tue, 02 Aug 2016 18:47:00 -0500
 
