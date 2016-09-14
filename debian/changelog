@@ -1,3 +1,9 @@
+watchman (0.7ubuntu2) UNRELEASED; urgency=medium
+
+  * Changed install location. 
+
+ -- Britt Dogg <bdogg@bdoggmobile>  Tue, 13 Sep 2016 19:25:00 -0500
+
 watchman (0.7) stable; urgency=low
 
   * GPLv3 release of clover, now renamed to watchman.

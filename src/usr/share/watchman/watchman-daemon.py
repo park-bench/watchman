@@ -27,11 +27,11 @@ import timber
 import time
 import traceback
 
-pid_file = '/var/opt/run/watchman.pid'
+pid_file = '/run/watchman.pid'
 
 print('Loading configuration.')
 config_file = ConfigParser.RawConfigParser()
-config_file.read('/etc/opt/watchman/watchman.conf')
+config_file.read('/etc/watchman/watchman.conf')
 
 # Figure out the logging options so that can start before anything else.
 print('Verifying configuration.')

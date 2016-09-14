@@ -39,7 +39,7 @@ class WatchmanSubprocess:
 
         print('Loading configuration.')
         config_file = ConfigParser.SafeConfigParser()
-        config_file.read('/etc/opt/watchman/watchman.conf')
+        config_file.read('/etc/watchman/watchman.conf')
 
         # Figure out the logging options so that can start before anything else.
         print('Verifying configuration.')
