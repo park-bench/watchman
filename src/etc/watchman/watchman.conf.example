@@ -3,7 +3,7 @@
 [General]
 
 # Log file for the watchman main process.
-main_process_log_file=/var/log/watchman.log
+main_process_log_file=/var/log/watchman/watchman.log
 
 # Log level for the watchman main process.
 main_process_log_level=info
@@ -15,7 +15,7 @@ video_device_number=0
 subprocess_pathname=/usr/share/watchman/watchman-subprocess.py
 
 # Log file for the watchman subprocess.
-subprocess_log_file=/var/log/watchman-subprocess.log
+subprocess_log_file=/var/log/watchman/watchman-subprocess.log
 
 # Log level for the watchman subprocess.
 subprocess_log_level=info
