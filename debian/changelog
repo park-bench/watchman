@@ -5,6 +5,7 @@ watchman (0.7) stable; urgency=low
 
   [ Britt Dogg ]
   * Changed install location. 
+  * Removed link to confighelper.
 
  -- eviljoel <eviljoel@linux.com>  Tue, 02 Aug 2016 18:47:00 -0500
 
