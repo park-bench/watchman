@@ -7,5 +7,5 @@ Standards-Version: 3.9.6.1
 
 Package: watchman
 Architecture: all
-Depends: confighelper (>=0.3),gpgmailer (>=0.7),python-timber,python-opencv
+Depends: confighelper (>=0.3),gpgmailer (>=0.7),python-opencv
 Description: Monitors for motion and sends encrypted e-mails upon detection.

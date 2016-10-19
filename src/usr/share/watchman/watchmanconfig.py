@@ -15,14 +15,14 @@
 
 import confighelper
 import ConfigParser
-import timber
+import logging
 
 class WatchmanConfig:
 
     # Reads the watchman subprocess configuration and exits the program there is an error.
     def __init__(self, config_file):
 
-        logger = timber.get_instance()
+        logger = logging.getLogger()
 
         logger.info('Validating subprocess configuration.')
 
