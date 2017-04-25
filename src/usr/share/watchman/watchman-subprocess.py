@@ -27,6 +27,7 @@ import cv2
 import datetime
 import glob
 import gpgmailmessage
+import logging
 import math
 import random
 import sys
@@ -67,6 +68,9 @@ class WatchmanSubprocess:
         self.last_trigger_motion = None
 
         self.video_device_number = int(sys.argv[1])
+
+        # Read gpgmailer watch directory from the gpgmailer config file
+        gpgmailmessage.GpgMailMessage.configure()
 
 
     def start_loop(self):
