@@ -177,9 +177,17 @@ class WatchmanSubprocess:
 
                 # Save the image?
                 if (current_frame['save'] == True):
+
+                    # just going to rotate the image here. if it works, I'll move it.
+                    img_to_rotate = current_frame['image']
+                    rows,cols,channels = img_to_rotate.shape
+
+                    M = cv2.getRotationMatrix2D((cols/2,rows/2),90,1)
+                    dst = cv2.warpAffine(img_to_rotate,M,(rows, cols))
+
                     pathname = ('%s%s.jpg') % (self.config.image_save_path, \
                         current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
-                    cv2.imwrite(pathname, current_frame['image'])
+                    cv2.imwrite(pathname, dst)
 
                 self._send_still_running_notification(current_frame)
 
@@ -201,9 +209,9 @@ class WatchmanSubprocess:
         # Find the difference between the two subtracted images
         difference_image = last_frame['subtracted_image'] - current_frame['subtracted_image']
         
-        #cv2.imshow('last subtracted_image', last_frame['subtracted_image'])
-        #cv2.imshow('current subtracted_image', current_frame['subtracted_image'])
-        #cv2.imshow('difference_image', difference_image)
+        cv2.imshow('last subtracted_image', last_frame['subtracted_image'])
+        cv2.imshow('current subtracted_image', current_frame['subtracted_image'])
+        cv2.imshow('difference_image', difference_image)
 
         channel_means = cv2.mean(difference_image)  # Find the mean difference of each channel
 
