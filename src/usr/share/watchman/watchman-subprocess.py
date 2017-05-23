@@ -183,8 +183,7 @@ class WatchmanSubprocess:
                     (height, width) = img.shape[:2]
                     (cX, cY) = (width / 2, height / 2)
                     
-                    #TODO Need to get this angle from the config file.
-                    angle = abs(90)
+                    angle = abs(self.config.rotation_angle)
 
                     # get rotation matrix with the angle going clockwise
                     M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)

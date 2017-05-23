@@ -66,6 +66,10 @@ class WatchmanConfig:
         #   sent as captured. If the image width is larger than this value, the image is scaled proportionally before it is sent.
         self.email_image_width = config_helper.verify_integer_exists(config_file, 'email_image_width')
 
+        # Angle (multiple of 90) at which to rotate images from the camera before they are saved or emailed.
+        # Useful if your camera is placed sideways or upside down.
+        self.rotation_angle = config_helper.verify_integer_exists(config_file, 'rotation_angle')
+
         self.image_save_throttle_delay = config_helper.verify_number_exists(config_file, 'image_save_throttle_delay')
 
         # Subject for still running notification.

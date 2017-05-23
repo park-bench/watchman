@@ -73,6 +73,10 @@ subsequent_email_delay=30
 # 1440 in width is roughly full HD in height assuming images are a 4:3 aspect ratio.
 email_image_width=1440
 
+# Angle (0 or multiple of 90) at which to rotate images from the camera before they are saved or emailed.
+# This is useful if your camera is placed sideways or upside down.
+rotation_angle=0
+
 # Time in seconds since the last motion significant enough to trigger an e-mail (as defined above) 
 #   before stopping the sending of e-mail.
 stop_threshold=30
