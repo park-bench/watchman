@@ -179,15 +179,36 @@ class WatchmanSubprocess:
                 if (current_frame['save'] == True):
 
                     # just going to rotate the image here. if it works, I'll move it.
-                    img_to_rotate = current_frame['image']
-                    rows,cols,channels = img_to_rotate.shape
+                    img = current_frame['image']
+                    (height, width) = img.shape[:2]
+                    (cX, cY) = (width / 2, height / 2)
+                    
+                    #TODO Need to get this angle from the config file.
+                    angle = abs(90)
 
-                    M = cv2.getRotationMatrix2D((cols/2,rows/2),90,1)
-                    dst = cv2.warpAffine(img_to_rotate,M,(rows, cols))
+                    # get rotation matrix with the angle going clockwise
+                    M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+
+                    if (angle == 90 or angle == 270):
+                        # swap the height and width of the container
+                        (oldWidth, oldHeight) = (width, height)
+                        (width, height) = (oldHeight, oldWidth)
+
+                        # adjust the rotation matrix to center the image
+                        M[0, 2] += (width / 2) - cX
+                        M[1, 2] += (height / 2) - cY
+
+                    # do the rotation
+                    newImg = cv2.warpAffine(img,M,(width, height))
+
+                    # Show the images while testing.
+                    cv2.imshow('image before rotation', img)
+                    cv2.imshow('rotated image', newImg)
+                    cv2.waitKey(0)
 
                     pathname = ('%s%s.jpg') % (self.config.image_save_path, \
                         current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
-                    cv2.imwrite(pathname, dst)
+                    cv2.imwrite(pathname, newImg)
 
                 self._send_still_running_notification(current_frame)
 
@@ -209,9 +230,9 @@ class WatchmanSubprocess:
         # Find the difference between the two subtracted images
         difference_image = last_frame['subtracted_image'] - current_frame['subtracted_image']
         
-        cv2.imshow('last subtracted_image', last_frame['subtracted_image'])
-        cv2.imshow('current subtracted_image', current_frame['subtracted_image'])
-        cv2.imshow('difference_image', difference_image)
+        #cv2.imshow('last subtracted_image', last_frame['subtracted_image'])
+        #cv2.imshow('current subtracted_image', current_frame['subtracted_image'])
+        #cv2.imshow('difference_image', difference_image)
 
         channel_means = cv2.mean(difference_image)  # Find the mean difference of each channel
 
