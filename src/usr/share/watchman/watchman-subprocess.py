@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+# TODO: Consider running in a chroot or jail.
 # TODO: Consider detecting and sending the most interesting images.
 # TODO: Consider using facial detection.
 

@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import watchmanconfig
 import confighelper
 import ConfigParser
+import daemon
 import glob
 import logging
 import os
@@ -26,6 +26,7 @@ import subprocess
 import sys
 import time
 import traceback
+import watchmanconfig
 
 pid_file = '/run/watchman.pid'
 
@@ -52,48 +53,6 @@ watchmanconfig.WatchmanConfig(config_file)
 # TODO: Consider validating for a malicious path.
 video_device_number = config_helper.verify_integer_exists(config_file, 'video_device_number')
 
-# TODO: Move this to common library.
-def daemonize():
-    # Fork the first time to make init our parent.
-    try:
-        pid = os.fork()
-        if pid > 0:
-            sys.exit(0)
-    except OSError, e:
-        logger.critical("Failed to make parent process init: %d (%s)" % (e.errno, e.strerror))
-        sys.exit(1)
-
-    # TODO: Consider changing these to be more restrictive
-    os.chdir("/")  # Change the working directory
-    os.setsid()  # Create a new process session.
-    os.umask(0)
-
-    # Fork the second time to make sure the process is not a session leader. 
-    #   This apparently prevents us from taking control of a TTY.
-    try:
-        pid = os.fork()
-        if pid > 0:
-            sys.exit(0)
-    except OSError, e:
-        logger.critical("Failed to give up session leadership: %d (%s)" % (e.errno, e.strerror))
-        sys.exit(1)
-
-    # Redirect standard file descriptors
-    sys.stdout.flush()
-    sys.stderr.flush()
-    devnull = os.open(os.devnull, os.O_RDWR)
-    os.dup2(devnull, sys.stdin.fileno())
-    os.dup2(devnull, sys.stdout.fileno())
-    os.dup2(devnull, sys.stderr.fileno())
-    os.close(devnull)
-
-    pid = str(os.getpid())
-    pid_file_handle = file(pid_file,'w')
-    pid_file_handle.write("%s\n" % pid)
-    pid_file_handle.close()
-    
-daemonize()
-
 watchman_subprocess = None
 
 # Quit when SIGTERM is received
@@ -104,44 +63,54 @@ def sig_term_handler(signal, stack_frame):
         watchman_subprocess.kill()
     sys.exit(0)
 
-signal.signal(signal.SIGTERM, sig_term_handler)
+# TODO: Work out a permissions setup for this program that it doesn't run as root.
+daemon_context = daemon.DaemonContext(
+    working_directory = '/',
+    pidfile = pidlockfile.PIDLockFile(PID_FILE),
+    umask = 0
+    )
 
-try:
-    selected_device = '/dev/video%d' % video_device_number
+daemon_context.signal_map = {
+    signal.SIGTERM : sig_term_handler
+    }
 
-    # Loop forever
-    while 1:   
+with daemon_context:
+    try:
+        selected_device = '/dev/video%d' % video_device_number
 
-        # Startup the subprocess to that takes photos
-        logger.info("Starting watchman subprocess with device %s." % selected_device)
-        watchman_subprocess = subprocess.Popen([subprocess_pathname, '%d' % video_device_number])
+        # Loop forever
+        while 1:   
 
-        # Loop while the device exists
-        while len(glob.glob(selected_device)) == 1 and watchman_subprocess.poll() == None:
-            time.sleep(.1)
+            # Startup the subprocess to that takes photos
+            logger.info("Starting watchman subprocess with device %s." % selected_device)
+            watchman_subprocess = subprocess.Popen([subprocess_pathname, '%d' % video_device_number])
 
-        # Kill the subprocess so it can be restarted
-        try:
-            logger.info("Detected device removal. Killing watchman subprocess.");
-            # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a second
-            #   then do a kill or kill -9.
+            # Loop while the device exists
+            while len(glob.glob(selected_device)) == 1 and watchman_subprocess.poll() == None:
+                time.sleep(.1)
+
+            # Kill the subprocess so it can be restarted
+            try:
+                logger.info("Detected device removal. Killing watchman subprocess.");
+                # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a second
+                #   then do a kill or kill -9.
+                watchman_subprocess.kill()
+            except OSError as e:
+                logger.error("Error killing watchman subprocess. %s: %s" % \
+                    (type(e).__name__, e.message))
+                logger.error("%s" % traceback.format_exc())
+                logger.error("Ignoring.")
+
+            # Wait for the device to come back
+            while len(glob.glob(selected_device)) == 0:
+                time.sleep(.1)
+
+            logger.info("Detected device insertion.");
+
+    except Exception as e:
+        logger.critical("Fatal %s: %s" % (type(e).__name__, e.message))
+        logger.error("%s" % traceback.format_exc())
+        if watchman_subprocess <> None:
+            logger.info("Killing watchman subprocess.");
             watchman_subprocess.kill()
-        except OSError as e:
-            logger.error("Error killing watchman subprocess. %s: %s" % \
-                (type(e).__name__, e.message))
-            logger.error("%s" % traceback.format_exc())
-            logger.error("Ignoring.")
-
-        # Wait for the device to come back
-        while len(glob.glob(selected_device)) == 0:
-            time.sleep(.1)
-
-        logger.info("Detected device insertion.");
-
-except Exception as e:
-    logger.critical("Fatal %s: %s" % (type(e).__name__, e.message))
-    logger.error("%s" % traceback.format_exc())
-    if watchman_subprocess <> None:
-        logger.info("Killing watchman subprocess.");
-        watchman_subprocess.kill()
-    sys.exit(1)
+        sys.exit(1)
