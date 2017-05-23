@@ -178,36 +178,12 @@ class WatchmanSubprocess:
                 # Save the image?
                 if (current_frame['save'] == True):
 
-                    # just going to rotate the image here. if it works, I'll move it.
-                    img = current_frame['image']
-                    (height, width) = img.shape[:2]
-                    (cX, cY) = (width / 2, height / 2)
-                    
-                    angle = abs(self.config.rotation_angle)
-
-                    # get rotation matrix with the angle going clockwise
-                    M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
-
-                    if (angle == 90 or angle == 270):
-                        # swap the height and width of the container
-                        (oldWidth, oldHeight) = (width, height)
-                        (width, height) = (oldHeight, oldWidth)
-
-                        # adjust the rotation matrix to center the image
-                        M[0, 2] += (width / 2) - cX
-                        M[1, 2] += (height / 2) - cY
-
-                    # do the rotation
-                    newImg = cv2.warpAffine(img,M,(width, height))
-
-                    # Show the images while testing.
-                    cv2.imshow('image before rotation', img)
-                    cv2.imshow('rotated image', newImg)
-                    cv2.waitKey(0)
+                    # Rotate the image (if required) before saving it to disk.
+                    img = self._rotate_image(current_frame['image'])
 
                     pathname = ('%s%s.jpg') % (self.config.image_save_path, \
                         current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
-                    cv2.imwrite(pathname, newImg)
+                    cv2.imwrite(pathname, img)
 
                 self._send_still_running_notification(current_frame)
 
@@ -411,6 +387,9 @@ class WatchmanSubprocess:
             else:
                 small_frame = frame['image']
 
+            # Rotate the image if needed
+            small_frame = self._rotate_image(small_frame)
+
             # Save the file in memory
             ret, small_jpeg = cv2.imencode('.jpg', small_frame)
 
@@ -426,6 +405,35 @@ class WatchmanSubprocess:
         email.queue_for_sending()
 
         self.last_email_sent_time = current_frame['time']
+
+    def _rotate_image(self, img):
+
+        (height, width) = img.shape[:2]
+        (cX, cY) = (width / 2, height / 2)
+                    
+        angle = abs(self.config.rotation_angle)
+
+        # get rotation matrix with the angle going clockwise
+        M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+
+        if (angle == 90 or angle == 270):
+            # swap the height and width of the container
+            (oldWidth, oldHeight) = (width, height)
+            (width, height) = (oldHeight, oldWidth)
+
+            # adjust the rotation matrix to center the image
+            M[0, 2] += (width / 2) - cX
+            M[1, 2] += (height / 2) - cY
+
+        # do the rotation
+        newImg = cv2.warpAffine(img, M, (width, height))
+
+        # Show the images while testing.
+        #cv2.imshow('image before rotation', img)
+        #cv2.imshow('rotated image', newImg)
+        #cv2.waitKey(0)
+
+        return newImg
 
 
     # Creates the replacement subtractor and replaces the main subtractor after appropriate delays.
