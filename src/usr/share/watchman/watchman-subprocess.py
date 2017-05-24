@@ -178,12 +178,14 @@ class WatchmanSubprocess:
                 # Save the image?
                 if (current_frame['save'] == True):
 
+                    # TODO: Rotate the image as soon as you know you are going to save it. (Create
+                    #   a _markForSavingAndRotate method.)
                     # Rotate the image (if required) before saving it to disk.
-                    img = self._rotate_image(current_frame['image'])
+                    rotated_image = self._rotate_image(current_frame['image'])
 
                     pathname = ('%s%s.jpg') % (self.config.image_save_path, \
                         current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
-                    cv2.imwrite(pathname, img)
+                    cv2.imwrite(pathname, rotated_image)
 
                 self._send_still_running_notification(current_frame)
 
@@ -387,7 +389,9 @@ class WatchmanSubprocess:
             else:
                 small_frame = frame['image']
 
-            # Rotate the image if needed
+            # TODO: Rotate the image before scaling. Actually, rotate the image as soon as you know
+            #   you are going to save it. (Create a _markForSavingAndRotate method.)
+            # Rotate the image if needed.
             small_frame = self._rotate_image(small_frame)
 
             # Save the file in memory
@@ -406,34 +410,44 @@ class WatchmanSubprocess:
 
         self.last_email_sent_time = current_frame['time']
 
-    def _rotate_image(self, img):
 
-        (height, width) = img.shape[:2]
-        (cX, cY) = (width / 2, height / 2)
-                    
-        angle = abs(self.config.rotation_angle)
+    # Rotates an image either 0, 90, 180, or 270 degrees. Rotation angle is dictated by the
+    #   configuration variable 'image_rotation_angle'.
+    def _rotate_image(self, image):
 
-        # get rotation matrix with the angle going clockwise
-        M = cv2.getRotationMatrix2D((cX, cY), -angle, 1.0)
+        # TODO: Don't rotate the image when the angle is 0. This is a performance optimization.
 
-        if (angle == 90 or angle == 270):
-            # swap the height and width of the container
-            (oldWidth, oldHeight) = (width, height)
-            (width, height) = (oldHeight, oldWidth)
+        (height, width) = image.shape[:2]
+        (center_x, center_y) = (width / 2, height / 2)
 
-            # adjust the rotation matrix to center the image
-            M[0, 2] += (width / 2) - cX
-            M[1, 2] += (height / 2) - cY
+        rotation_angle = self.config.image_rotation_angle
 
-        # do the rotation
-        newImg = cv2.warpAffine(img, M, (width, height))
+        # Create the rotation matrix with the angle adjusted to turn the image clockwise. The image
+        #   is rotated around its center. The third parameter is the magnification scale (which
+        #   is set to remain the same).
+        rotation_matrix = cv2.getRotationMatrix2D((center_x, center_y), -rotation_angle, 1.0)
+
+        # Adjust the window height and image position when the image is on its side.
+        if rotation_angle == 90 or rotation_angle == 270:
+
+            # Swap the height and width of the new image.
+            original_width = width
+            width = height
+            height = original_width
+
+            # Adjust the rotation matrix to center the image in the new dimensions.
+            rotation_matrix[0, 2] += (width / 2) - center_x
+            rotation_matrix[1, 2] += (height / 2) - center_y
+
+        # Actually do the rotation.
+        rotated_image = cv2.warpAffine(image, rotation_matrix, (width, height))
 
         # Show the images while testing.
-        #cv2.imshow('image before rotation', img)
-        #cv2.imshow('rotated image', newImg)
+        #cv2.imshow('Image Before Rotation', image)
+        #cv2.imshow('Rotated Image', rotated_image)
         #cv2.waitKey(0)
 
-        return newImg
+        return rotated_image
 
 
     # Creates the replacement subtractor and replaces the main subtractor after appropriate delays.
