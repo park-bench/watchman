@@ -178,14 +178,9 @@ class WatchmanSubprocess:
                 # Save the image?
                 if (current_frame['save'] == True):
 
-                    # TODO: Rotate the image as soon as you know you are going to save it. (Create
-                    #   a _markForSavingAndRotate method.)
-                    # Rotate the image (if required) before saving it to disk.
-                    rotated_image = self._rotate_image(current_frame['image'])
-
                     pathname = ('%s%s.jpg') % (self.config.image_save_path, \
                         current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
-                    cv2.imwrite(pathname, rotated_image)
+                    cv2.imwrite(pathname, current_frame['rotated_image'])
 
                 self._send_still_running_notification(current_frame)
 
@@ -194,8 +189,6 @@ class WatchmanSubprocess:
         finally:
             # Clean up
             self.capture_device.release()
-            cv2.destroyAllWindows()  # Again for interactive debugging.
-
 
     # Finds the summation of the absolute mean value of each channel from the difference of
     #   the two prior background subtracted images. (If you don't understand what this means, 
@@ -238,11 +231,11 @@ class WatchmanSubprocess:
             if ((current_frame['time'] - self.last_image_save_time) >= 
                 datetime.timedelta(seconds = self.config.image_save_throttle_delay)):
 
-                # Save the image
-                self.logger.trace('Image marked for local save at %s.' % \
-                    current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
-                current_frame['save'] = True
+                # Mark the image to be saved.
                 self.last_image_save_time = current_frame['time']
+                self._mark_for_saving_and_rotate(current_frame)
+                self.logger.trace('Image marked for local save at %s.' % \
+                current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
 
             # See if there has been another difference in the last second
             prior_movements_iterator = iter(self.prior_movements)
@@ -344,7 +337,7 @@ class WatchmanSubprocess:
     def _store_email_frames_on_threshold(self, start_time, last_frame, current_frame, thresholds):
         for threshold in thresholds:
             if (self._did_threshold_trigger(start_time, last_frame, current_frame, threshold)):
-                current_frame['save'] = True
+                self._mark_for_saving_and_rotate(current_frame)
                 self.email_frames.append(current_frame)
                 break
 
@@ -380,19 +373,14 @@ class WatchmanSubprocess:
             # Resize for e-mail or don't resize if images is smaller than desired resolution.
             desired_image_width = self.config.email_image_width  # In pixels
             # depth is discarded
-            current_image_height, current_image_width, depth = frame['image'].shape
+            current_image_height, current_image_width, depth = frame['rotated_image'].shape
             if desired_image_width < current_image_width:
                 # Images are scaled proportionally.
                 desired_image_height = int(desired_image_width * (current_image_height / \
                     current_image_width))
-                small_frame = cv2.resize(frame['image'], (desired_image_width, desired_image_height))
+                small_frame = cv2.resize(frame['rotated_image'], (desired_image_width, desired_image_height))
             else:
-                small_frame = frame['image']
-
-            # TODO: Rotate the image before scaling. Actually, rotate the image as soon as you know
-            #   you are going to save it. (Create a _markForSavingAndRotate method.)
-            # Rotate the image if needed.
-            small_frame = self._rotate_image(small_frame)
+                small_frame = frame['rotated_image']
 
             # Save the file in memory
             ret, small_jpeg = cv2.imencode('.jpg', small_frame)
@@ -410,44 +398,51 @@ class WatchmanSubprocess:
 
         self.last_email_sent_time = current_frame['time']
 
-
     # Rotates an image either 0, 90, 180, or 270 degrees. Rotation angle is dictated by the
     #   configuration variable 'image_rotation_angle'.
-    def _rotate_image(self, image):
+    def _mark_for_saving_and_rotate(self, frame):
 
-        # TODO: Don't rotate the image when the angle is 0. This is a performance optimization.
+        # Don't do this operation if the frame has already been saved.
+        if frame['save'] == False:
 
-        (height, width) = image.shape[:2]
-        (center_x, center_y) = (width / 2, height / 2)
+            frame['save'] = True
 
-        rotation_angle = self.config.image_rotation_angle
+            rotation_angle = self.config.image_rotation_angle
 
-        # Create the rotation matrix with the angle adjusted to turn the image clockwise. The image
-        #   is rotated around its center. The third parameter is the magnification scale (which
-        #   is set to remain the same).
-        rotation_matrix = cv2.getRotationMatrix2D((center_x, center_y), -rotation_angle, 1.0)
+            # Don't rotate the image if the rotation angle is 0.
+            if rotation_angle == 0:
+                frame['rotated_image'] = frame['image']
+                #return frame
 
-        # Adjust the window height and image position when the image is on its side.
-        if rotation_angle == 90 or rotation_angle == 270:
+            (height, width) = frame['image'].shape[:2]
+            (center_x, center_y) = (width / 2, height / 2)
 
-            # Swap the height and width of the new image.
-            original_width = width
-            width = height
-            height = original_width
+            # Create the rotation matrix with the angle adjusted to turn the image clockwise. The image
+            #   is rotated around its center. The third parameter is the magnification scale (which
+            #   is set to remain the same).
+            rotation_matrix = cv2.getRotationMatrix2D((center_x, center_y), -rotation_angle, 1.0)
 
-            # Adjust the rotation matrix to center the image in the new dimensions.
-            rotation_matrix[0, 2] += (width / 2) - center_x
-            rotation_matrix[1, 2] += (height / 2) - center_y
+            # Adjust the window height and image position when the image is on its side.
+            if rotation_angle == 90 or rotation_angle == 270:
 
-        # Actually do the rotation.
-        rotated_image = cv2.warpAffine(image, rotation_matrix, (width, height))
+                # Swap the height and width of the new image.
+                original_width = width
+                width = height
+                height = original_width
 
-        # Show the images while testing.
-        #cv2.imshow('Image Before Rotation', image)
-        #cv2.imshow('Rotated Image', rotated_image)
-        #cv2.waitKey(0)
+                # Adjust the rotation matrix to center the image in the new dimensions.
+                rotation_matrix[0, 2] += (width / 2) - center_x
+                rotation_matrix[1, 2] += (height / 2) - center_y
 
-        return rotated_image
+            # Actually do the rotation.
+            frame['rotated_image'] = cv2.warpAffine(frame['image'], rotation_matrix, (width, height))
+
+            # Show the images while testing.
+            #cv2.imshow('Image Before Rotation', frame['image'])
+            #cv2.imshow('Rotated Image', frame['rotated_image'])
+            #cv2.waitKey(0)
+
+            #return frame
 
 
     # Creates the replacement subtractor and replaces the main subtractor after appropriate delays.
