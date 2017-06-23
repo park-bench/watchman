@@ -19,7 +19,7 @@ import logging
 
 class WatchmanConfig:
 
-    # Reads the watchman subprocess configuration and exits the program there is an error.
+    # Reads the watchman subprocess configuration and exits the program if there is an error.
     def __init__(self, config_file):
 
         logger = logging.getLogger()
@@ -68,7 +68,7 @@ class WatchmanConfig:
 
         # Angle to rotate the images before they are saved or e-mailed. Only values of 0, 90, 180, or 270 are
         #   permitted. This is useful if your camera is placed sideways or upside down.
-        self.image_rotation_angle = config_helper.verify_integer_exists(config_file, 'image_rotation_angle')
+        self.image_rotation_angle = config_helper.verify_valid_integer_option(config_file, 'image_rotation_angle', (0, 90, 180, 270))
         # TODO: Verify rotation angle is either 0, 90, 180, or 270.
 
         self.image_save_throttle_delay = config_helper.verify_number_exists(config_file, 'image_save_throttle_delay')
