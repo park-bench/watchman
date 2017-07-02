@@ -415,12 +415,12 @@ class WatchmanSubprocess:
                 #return frame
 
             (height, width) = frame['image'].shape[:2]
-            (center_x, center_y) = (width / 2, height / 2)
+            (center_x, center_y) = (width / 2.0, height / 2.0)
 
             # Create the rotation matrix with the angle adjusted to turn the image clockwise. The image
             #   is rotated around its center. The third parameter is the magnification scale (which
             #   is set to remain the same).
-            rotation_matrix = cv2.getRotationMatrix2D((center_x, center_y), -rotation_angle, 1.0)
+            rotation_matrix = cv2.getRotationMatrix2D((center_x - 0.5, center_y - 0.5), -rotation_angle, 1.0)
 
             # Adjust the window height and image position when the image is on its side.
             if rotation_angle == 90 or rotation_angle == 270:
@@ -431,8 +431,8 @@ class WatchmanSubprocess:
                 height = original_width
 
                 # Adjust the rotation matrix to center the image in the new dimensions.
-                rotation_matrix[0, 2] += (width / 2) - center_x
-                rotation_matrix[1, 2] += (height / 2) - center_y
+                rotation_matrix[0, 2] += (width / 2.0) - center_x
+                rotation_matrix[1, 2] += (height / 2.0) - center_y
 
             # Actually do the rotation.
             frame['rotated_image'] = cv2.warpAffine(frame['image'], rotation_matrix, (width, height))
@@ -441,8 +441,6 @@ class WatchmanSubprocess:
             #cv2.imshow('Image Before Rotation', frame['image'])
             #cv2.imshow('Rotated Image', frame['rotated_image'])
             #cv2.waitKey(0)
-
-            #return frame
 
 
     # Creates the replacement subtractor and replaces the main subtractor after appropriate delays.
