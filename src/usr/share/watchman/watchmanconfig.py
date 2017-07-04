@@ -68,7 +68,7 @@ class WatchmanConfig:
 
         # Angle to rotate the images before they are saved or e-mailed. Only values of 0, 90, 180, or 270 are
         #   permitted. This is useful if your camera is placed sideways or upside down.
-        self.image_rotation_angle = config_helper.verify_valid_integer_option(config_file, 'image_rotation_angle', (0, 90, 180, 270))
+        self.image_rotation_angle = config_helper.verify_valid_integer_in_list(config_file, 'image_rotation_angle', (0, 90, 180, 270))
 
         self.image_save_throttle_delay = config_helper.verify_number_exists(config_file, 'image_save_throttle_delay')
 
