@@ -17,22 +17,25 @@ import confighelper
 import ConfigParser
 import logging
 
+# Loads the configuration for the 'watchman' program. An instance of this object contains all the
+#   configuration values.
 class WatchmanConfig:
 
-    # Reads the watchman subprocess configuration and exits the program there is an error.
+    # Reads the watchman configuration file and exits the program if there is an error.
     def __init__(self, config_file):
 
         logger = logging.getLogger()
 
-        logger.info('Validating subprocess configuration.')
+        logger.info('Validating watchman configuration.')
 
         config_helper = confighelper.ConfigHelper()
 
-        # By the time this method is called in the subprocess, the logging should already be started. 
-        #   However, the main process still needs to validate the subprocess's logging parameters.
-        #   Hence why the result is simply discarded.
-        config_helper.verify_string_exists(config_file, 'subprocess_log_file')
-        config_helper.verify_string_exists(config_file, 'subprocess_log_level')
+        # Indicates how detailed the logging should be.
+        self.log_level = config_helper.verify_string_exists(config_file, 'log_level')
+
+        # The number of the video device we want to capture photos with. Corresponds to the video
+        #   device number that is in the Linux /dev directory.
+        self.video_device_number = config_helper.verify_integer_exists(config_parser, 'video_device_number')
 
         # Skips this many frames before detecting motion. Gives the camera a chance to warm up.
         #   Set to zero to disable.

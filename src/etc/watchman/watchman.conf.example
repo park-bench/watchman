@@ -2,23 +2,11 @@
 
 [General]
 
-# Log file for the watchman main process.
-main_process_log_file=/var/log/watchman/watchman.log
-
-# Log level for the watchman main process.
-main_process_log_level=info
+# Controls how detailed the logs should be.
+log_level=info
 
 # The camera video device number to use. (e.g. 0 in /dev/video0)
 video_device_number=0
-
-# Location of the watchman subprocess.
-subprocess_pathname=/usr/share/watchman/watchman-subprocess.py
-
-# Log file for the watchman subprocess.
-subprocess_log_file=/var/log/watchman/watchman-subprocess.log
-
-# Log level for the watchman subprocess.
-subprocess_log_level=info
 
 # Skips this many frames before detecting motion. Gives the camera a chance to warm up.
 #   Set to zero to disable.
