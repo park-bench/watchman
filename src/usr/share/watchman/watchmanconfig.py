@@ -19,7 +19,7 @@ import logging
 
 class WatchmanConfig:
 
-    # Reads the watchman subprocess configuration and exits the program there is an error.
+    # Reads the watchman subprocess configuration and exits the program if there is an error.
     def __init__(self, config_file):
 
         logger = logging.getLogger()
@@ -65,6 +65,10 @@ class WatchmanConfig:
         # The maximum image width for images sent via the e-mail. If the image width is smaller than this value, the image is
         #   sent as captured. If the image width is larger than this value, the image is scaled proportionally before it is sent.
         self.email_image_width = config_helper.verify_integer_exists(config_file, 'email_image_width')
+
+        # Angle to rotate the images before they are saved or e-mailed. Only values of 0, 90, 180, or 270 are
+        #   permitted. This is useful if your camera is placed sideways or upside down.
+        self.image_rotation_angle = config_helper.verify_valid_integer_in_list(config_file, 'image_rotation_angle', (0, 90, 180, 270))
 
         self.image_save_throttle_delay = config_helper.verify_number_exists(config_file, 'image_save_throttle_delay')
 

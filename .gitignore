@@ -6,3 +6,5 @@ debian/watchman.substvars
 debian/debhelper.log
 src/etc/opt/watchman/watchman.conf
 *.pyc
+.idea/
+*.iml
