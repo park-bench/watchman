@@ -6,17 +6,17 @@ watchman is licensed under the GNU GPLv3. All source code commits prior to the p
 
 Bug fixes are welcome!
 
-## Warnings
+## Prerequisites
 
 This software is currently only supported on Ubuntu 14.04 and may not be ready for use in a production environment.
 
-The only current method of installation for our software is building and installing your own package. We make the following assumptions:
+The only current method of installation for our software is building and installing your own debian package. We make the following assumptions:
 
 *    You are already familiar with using a Linux terminal.
 *    You already know how to use GnuPG.
 *    You are already somewhat familiar with using debuild.
 
-## Dependencies
+## Parkbench Dependencies
 
 _watchman_ depends on two other pieces of the Parkbench project, which must be installed first:
 
