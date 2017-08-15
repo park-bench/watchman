@@ -41,7 +41,7 @@ class WatchmanConfig:
         self.image_save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
 
         # List of recipients for watchman emails. Cannot be empty.
-        self.email_recipients = config_helper.verify_string_list_exists(config_file, 'email_recipients')
+        self.recipient_emails = config_helper.verify_string_list_exists(config_file, 'recipient_emails')
 
         # List of gpg key fingerprints for recipients of watchman emails. Cannot be empty.
         self.recipient_keys = config_helper.verify_string_list_exists(config_file, 'recipient_keys')
