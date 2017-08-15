@@ -40,6 +40,15 @@ class WatchmanConfig:
 
         self.image_save_path = config_helper.verify_string_exists(config_file, 'image_save_path')
 
+        # List of recipients for watchman emails. Cannot be empty.
+        self.email_recipients = config_helper.verify_string_list_exists(config_file, 'email_recipients')
+
+        # List of gpg key fingerprints for recipients of watchman emails. Cannot be empty.
+        self.recipient_keys = config_helper.verify_string_list_exists(config_file, 'recipient_keys')
+        for key in self.recipient_keys:
+            if (len(key) != 40):
+                raise Exception('Invalid key fingerprint.')
+
         # Subject on motion detection e-mails
         self.motion_detection_email_subject = config_helper.verify_string_exists(config_file, 'motion_detection_email_subject')
         # Time in seconds
@@ -74,6 +83,7 @@ class WatchmanConfig:
 
         # Subject for still running notification.
         self.still_running_email_subject = config_helper.verify_string_exists(config_file, 'still_running_email_subject')
+
         # Maximum time in days before still running notification is sent.
         self.still_running_email_max_delay = config_helper.verify_number_exists(config_file, 'still_running_email_max_delay')
 

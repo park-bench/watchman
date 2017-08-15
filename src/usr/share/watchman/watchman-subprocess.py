@@ -293,6 +293,8 @@ class WatchmanSubprocess:
             email.set_subject(self.config.still_running_email_subject)
             email.set_body('Watchman is still running as of %s.' % \
                 current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
+            email.set_recipients(self.config.email_recipients)
+            email.set_recipient_keys(self.config.recipient_keys)
 
             self.logger.info('Sending still running notification e-mail.')
             email.queue_for_sending()

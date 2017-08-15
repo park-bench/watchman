@@ -27,6 +27,12 @@ initial_frame_skip_count=5
 # Directory to save the images to.
 image_save_path=/var/log/watchman/images/
 
+# Comma-separated list of recipients for watchman emails. Cannot be empty.
+email_recipients=
+
+# Comma-separated list of key fingerprints for recipients of watchman emails. Cannot be empty.
+recipient_keys=
+
 # Subject for e-mails containing images after motion detection. This should probably be
 #   something vague.
 motion_detection_email_subject=Encrypted message from your server.
