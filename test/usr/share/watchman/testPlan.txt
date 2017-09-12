@@ -4,7 +4,7 @@
 * Plugging camera back in resumes subprocess.
 * Repeatedly unplug and plug back in.
   * Do it fast to try to screw stuff up.
-* Stopping service gracefully stops subprocess.
+* Stopping service kills subprocess.
 * Move the subprocess to get into the main loop exception handler.
 
 * Test all required configuration variables exist.
