@@ -7,9 +7,16 @@
 * Stopping service kills subprocess.
 * Move the subprocess to get into the main loop exception handler.
 
-* Test all required configuration variables exist.
-* Test all required configuration values are not blank.
-* Test all numeric configuration values only accept numbers.
+* Configuration file is missing.
+    - Crash.
+* Remove each required option.
+    - Crash with decent message.
+* Test each option that will not accept blanks.
+    - Crash with decent message.
+* Verify numbers fields only accept numbers.
+    - Crash with decent message.
+* Verify integer fields don't accept floats.
+    - Crash with decent message.
 
 * Frames are captured for the first e-mail and first e-mail is sent.
 * Frames are captured for the second e-mail and second e-mail is sent.
