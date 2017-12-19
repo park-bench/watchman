@@ -16,6 +16,8 @@
 import confighelper
 import logging
 
+__all__ = ['WatchmanConfig']
+
 
 class WatchmanConfig:
 

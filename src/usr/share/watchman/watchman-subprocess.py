@@ -31,6 +31,8 @@ import math
 import random
 import sys
 
+__all__ = ['WatchmanSubprocess']
+
 
 class WatchmanSubprocess:
 
