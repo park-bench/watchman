@@ -20,6 +20,10 @@
 
 from __future__ import division
 
+__all__ = ['WatchmanSubprocess']
+__author__ = 'Joel Luellwitz and Andrew Klapp'
+__version__ = '0.8'
+
 import watchmanconfig
 import confighelper
 import ConfigParser
@@ -30,8 +34,6 @@ import logging
 import math
 import random
 import sys
-
-__all__ = ['WatchmanSubprocess']
 
 
 class WatchmanSubprocess:

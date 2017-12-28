@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+__author__ = 'Joel Luellwitz and Andrew Klapp'
+__version__ = '0.8'
+
 import watchmanconfig
 import confighelper
 import ConfigParser
@@ -27,7 +30,7 @@ import sys
 import time
 import traceback
 
-pid_file = '/run/watchman.pid'
+PID_FILE = '/run/watchman.pid'
 
 print('Loading configuration.')
 config_file = ConfigParser.RawConfigParser()
@@ -93,7 +96,7 @@ def daemonize():
     os.close(devnull)
 
     pid = str(os.getpid())
-    pid_file_handle = file(pid_file, 'w')
+    pid_file_handle = file(PID_FILE, 'w')
     pid_file_handle.write('%s\n' % pid)
     pid_file_handle.close()
 

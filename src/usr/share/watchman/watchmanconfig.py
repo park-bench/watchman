@@ -13,10 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+__all__ = ['WatchmanConfig']
+__author__ = 'Joel Luellwitz and Andrew Klapp'
+__version__ = '0.8'
+
 import confighelper
 import logging
-
-__all__ = ['WatchmanConfig']
 
 
 class WatchmanConfig:
