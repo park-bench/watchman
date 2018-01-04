@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-# Copyright 2015-2017 Joel Allen Luellwitz and Andrew Klapp
+# Copyright 2015-2018 Joel Allen Luellwitz and Andrew Klapp
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,6 @@
 __author__ = 'Joel Luellwitz and Andrew Klapp'
 __version__ = '0.8'
 
-import watchmanconfig
 import confighelper
 import ConfigParser
 import glob
@@ -29,6 +28,7 @@ import subprocess
 import sys
 import time
 import traceback
+import watchmanconfig
 
 PID_FILE = '/run/watchman.pid'
 
@@ -66,9 +66,8 @@ def daemonize():
         if pid > 0:
             sys.exit(0)
     except OSError as e:
-        logger.critical('Failed to make parent process init: %d (%s)' %
-                        (e.errno, e.strerror))
-        sys.exit(1)
+        raise Exception('Failed to make parent process init: %d (%s)' % (
+            e.errno, e.strerror))
 
     # TODO: Consider changing these to be more restrictive
     os.chdir('/')  # Change the working directory
@@ -82,9 +81,8 @@ def daemonize():
         if pid > 0:
             sys.exit(0)
     except OSError as e:
-        logger.critical('Failed to give up session leadership: %d (%s)' %
-                        (e.errno, e.strerror))
-        sys.exit(1)
+        raise Exception('Failed to give up session leadership: %d (%s)' % (
+            e.errno, e.strerror))
 
     # Redirect standard file descriptors
     sys.stdout.flush()
@@ -154,4 +152,4 @@ except Exception as e:
     if watchman_subprocess is not None:
         logger.info('Killing watchman subprocess.')
         watchman_subprocess.kill()
-    sys.exit(1)
+    raise e
