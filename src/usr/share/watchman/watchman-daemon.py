@@ -39,9 +39,9 @@ config_file.read('/etc/watchman/watchman.conf')
 # Figure out the logging options so that can start before anything else.
 print('Verifying configuration.')
 config_helper = confighelper.ConfigHelper()
-log_file = config_helper.verify_string_exists_prelogging(
+log_file = config_helper.verify_string_exists(
     config_file, 'main_process_log_file')
-log_level = config_helper.verify_string_exists_prelogging(
+log_level = config_helper.verify_string_exists(
     config_file, 'main_process_log_level')
 
 config_helper.configure_logger(log_file, log_level)

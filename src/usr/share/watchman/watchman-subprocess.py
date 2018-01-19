@@ -47,9 +47,9 @@ class WatchmanSubprocess:
         # Figure out the logging options so that can start before anything else.
         print('Verifying configuration.')
         config_helper = confighelper.ConfigHelper()
-        log_file = config_helper.verify_string_exists_prelogging(
+        log_file = config_helper.verify_string_exists(
             config_file, 'subprocess_log_file')
-        log_level = config_helper.verify_string_exists_prelogging(
+        log_level = config_helper.verify_string_exists(
             config_file, 'subprocess_log_level')
 
         config_helper.configure_logger(log_file, log_level)
