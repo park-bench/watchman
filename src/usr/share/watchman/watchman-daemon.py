@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+__author__ = 'Joel Luellwitz and Andrew Klapp'
+__version__ = '0.8'
+
 import confighelper
 import ConfigParser
 import daemon
@@ -65,7 +68,7 @@ def get_user_and_group_ids():
     except KeyError as key_error:
         raise Exception('Group %s does not exist.' % PROCESS_GROUP_NAME, key_error)
 
-    return (program_user.pw_uid, program_group.gr_gid)
+    return program_user.pw_uid, program_group.gr_gid
 
 
 def read_configuration_and_create_logger(program_uid, program_gid):
@@ -80,7 +83,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     config_parser = ConfigParser.SafeConfigParser()
     config_parser.read(CONFIGURATION_PATHNAME)
 
-    # Logging config goes first
+    # Logging config goes first.
     config = {}
     config_helper = confighelper.ConfigHelper()
     config['log_level'] = config_helper.verify_string_exists_prelogging(
@@ -107,7 +110,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
 
     logger = logging.getLogger('%s-daemon' % PROGRAM_NAME)
 
-    logger.info('Verifying non-logging config')
+    logger.info('Verifying non-logging configuration.')
 
     # Parse the configuration file which is returned as an object.
     config = watchmanconfig.WatchmanConfig(config_parser)
@@ -130,8 +133,9 @@ def create_directory(system_path, program_dirs, uid, gid, mode):
     """
     logger.info('Creating directory %s.' % os.path.join(system_path, program_dirs))
 
+    path = system_path
     for directory in program_dirs.strip('/').split('/'):
-        path = os.path.join(system_path, directory)
+        path = os.path.join(path, directory)
         if not os.path.isdir(path):
             # Will throw exception if file cannot be created.
             os.makedirs(path, mode)
@@ -157,9 +161,9 @@ def sig_term_handler(signal, stack_frame):
     signal: Object representing the signal thrown.
     stack_frame: Represents the stack frame.
     """
-    logger.info("Received SIGTERM, quitting.")
+    logger.info('Received SIGTERM, quitting.')
     if watchman_subprocess is not None:
-        logger.info("Killing watchman subprocess.")
+        logger.info('Killing watchman subprocess.')
         watchman_subprocess.kill()
     sys.exit(0)
 
@@ -169,6 +173,8 @@ def setup_daemon_context(log_file_handle, program_uid, program_gid):
     signal handler.
 
     log_file_handle: The file handle to the log file.
+    program_uid: The system user ID the daemon should run as.
+    program_gid: The system group ID the daemon should run as.
     Returns the daemon context.
     """
     daemon_context = daemon.DaemonContext(
@@ -198,7 +204,7 @@ def main_loop(config):
     """
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
 
-    # Loop forever
+    # Loop forever.
     while True:
 
         # Wait for the device to show up.
@@ -207,7 +213,7 @@ def main_loop(config):
 
         logger.info("Detected video device %s." % selected_device_pathname)
 
-        # Startup the subprocess to that takes photos
+        # Startup the subprocess to that takes photos.
         logger.info(
             "Starting watchman subprocess with device %s." % selected_device_pathname)
         watchman_subprocess = subprocess.Popen(
@@ -218,17 +224,17 @@ def main_loop(config):
                 watchman_subprocess.poll() is None:
             time.sleep(.1)
 
-        # Kill the subprocess so it can be restarted
+        # Kill the subprocess so it can be restarted.
         try:
-            logger.info("Detected device removal. Killing watchman subprocess.")
+            logger.info('Detected device removal. Killing watchman subprocess.')
             # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a
             #   second then do a kill or kill -9.
             watchman_subprocess.kill()
         except OSError as e:
-            logger.error("Error killing watchman subprocess. %s: %s" % (
+            logger.error('Error killing watchman subprocess. %s: %s' % (
                 type(e).__name__, e.message))
-            logger.error("%s" % traceback.format_exc())
-            logger.error("Ignoring.")  # The subprocess might no longer exist.
+            logger.error('%s' % traceback.format_exc())
+            logger.error('Ignoring.')  # The subprocess might no longer exist.
 
 
 program_uid, program_gid = get_user_and_group_ids()
@@ -254,9 +260,9 @@ try:
         main_loop(config)
 
 except Exception as exception:
-    logger.critical('Fatal %s: %s\n' % (type(exception).__name__, exception.message))
+    logger.critical('Fatal %s: %s' % (type(exception).__name__, exception.message))
     logger.critical(traceback.format_exc())
     if watchman_subprocess is not None:
-        logger.critical("Killing watchman subprocess.")
+        logger.critical('Killing watchman subprocess.')
         watchman_subprocess.kill()
     raise exception

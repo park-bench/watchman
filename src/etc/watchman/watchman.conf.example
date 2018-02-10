@@ -56,10 +56,15 @@ subsequent_email_image_save_times=10,20,30
 #   subsequent e-mails.
 subsequent_email_delay=30
 
-# The maximum image width for images sent via the e-mail. If the image width is smaller than this value, the image is
-#   sent as captured. If the image width is larger than this value, the image is scaled proportionally before it is sent.
-# 1440 in width is roughly full HD in height assuming images are a 4:3 aspect ratio.
+# The maximum image width for images sent via the e-mail. If the image width is smaller than this
+#   value, the image is sent as captured. If the image width is larger than this value, the image is
+#   scaled proportionally before it is sent. 1440 in width is roughly full HD in height assuming
+#   images are a 4:3 aspect ratio. This parameter is applied AFTER rotation. (See below.)
 email_image_width=1440
+
+# Angle to rotate the images before they are saved or e-mailed. Only values of 0, 90, 180, or 270 are
+#   permitted. This is useful if your camera is placed sideways or upside down.
+image_rotation_angle=0
 
 # Time in seconds since the last motion significant enough to trigger an e-mail (as defined above) 
 #   before stopping the sending of e-mail.
@@ -69,7 +74,8 @@ stop_threshold=30
 #   This helps us not fill up the disk.
 image_save_throttle_delay=1
 
-# Subject for e-mail letting us know that watchman is still running. This should probably be something vague.
+# Subject for e-mail letting us know that watchman is still running. This should probably be something
+#   vague.
 still_running_email_subject=Encrypted message from your server.
 
 # Maximum days before still running notification is sent. Half of this is value is the

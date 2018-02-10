@@ -1,4 +1,10 @@
-watchman (0.7) UNRELEASED; urgency=low
+watchman (0.8) UNRELEASED; urgency=medium
+
+  * 
+
+ -- Andrew Klapp <andklapp@null.net>  Mon, 27 Nov 2017 20:37:00 -0600
+
+watchman (0.7) stable; urgency=low
 
   [ eviljoel ]
   * GPLv3 release of clover, now renamed to watchman.
