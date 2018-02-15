@@ -293,7 +293,7 @@ class WatchmanSubprocess:
             email.set_subject(self.config.still_running_email_subject)
             email.set_body('Watchman is still running as of %s.' % \
                 current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
-            email.set_recipient_emails(self.config.recipient_emails)
+            email.set_recipients(self.config.recipient_emails)
             email.set_recipient_keys(self.config.recipient_keys)
 
             self.logger.info('Sending still running notification e-mail.')
@@ -368,7 +368,7 @@ class WatchmanSubprocess:
         email.set_body('%s E-mail queued at %s. Current abs_diff_mean_total: %f' % \
                 (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
                 current_frame['abs_diff_mean_total']))
-        email.set_recipient_emails(self.config.recipient_emails)
+        email.set_recipients(self.config.recipient_emails)
         email.set_recipient_keys(self.config.recipient_keys)
 
         # Process all the frames
