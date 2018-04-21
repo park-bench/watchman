@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright 2015-2016 Joel Allen Luellwitz and Andrew Klapp
+# Copyright 2015-2018 Joel Allen Luellwitz and Andrew Klapp
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,6 +14,38 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+case "$1" in
+    configure)
+
+    # Default Linux user and group information
+    WATCHMAN_USER='watchman'
+    WATCHMAN_USER_COMMENT='Watchman Daemon'
+    WATCHMAN_GROUP='watchman'
+    GPGMAILER_GROUP='gpgmailer'
+    VIDEO_GROUP='video'
+
+    # Add the watchman group
+    if ! getent group "$WATCHMAN_GROUP" >> /dev/null; then
+        echo -n "Adding group $WATCHMAN_GROUP..."
+        addgroup --quiet --system "$WATCHMAN_GROUP" 2> /dev/null
+        echo "done"
+    fi
+
+    # Add the watchman user
+    if ! getent passwd "$WATCHMAN_USER" >> /dev/null; then
+        echo -n "Adding system user $WATCHMAN_USER..."
+        adduser --quiet --system --ingroup "$WATCHMAN_GROUP" --no-create-home --disabled-password \
+            "$WATCHMAN_USER" 2> /dev/null
+        echo "done"
+    fi
+
+    # Adjust the user regardless of whether this script created the user or not.
+    #   (The user might already exist.)
+    usermod -c "$WATCHMAN_USER_COMMENT" -d "/nonexistent" -g "$WATCHMAN_GROUP" \
+        -G "$GPGMAILER_GROUP","$VIDEO_GROUP" "$WATCHMAN_USER"
+    ;;
+esac
 
 update-rc.d watchman defaults || exit 1
 invoke-rc.d watchman start || exit 1

@@ -86,12 +86,12 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     # Logging config goes first.
     config = {}
     config_helper = confighelper.ConfigHelper()
-    config['log_level'] = config_helper.verify_string_exists_prelogging(
+    config['log_level'] = config_helper.verify_string_exists(
         config_parser, 'log_level')
 
     # Create logging directory.
     log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | \
-        stat.S_IROTH | stat.S_IXOTH
+        stat.S_IROTH | stat.S_IXOTH  # drwxr-xr-x watchman watchman
     # TODO: Look into defaulting the logging to the console until the program gets more
     #   bootstrapped.
     print('Creating logging directory %s.' % LOG_DIR)
@@ -248,7 +248,7 @@ try:
     #   to. Full access to user only.
     create_directory(
         SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid,
-        stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+        stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)  # drwx------ watchman watchman
 
     # Configuration has been read and directories setup. Now drop permissions forever.
     drop_permissions_forever(program_uid, program_gid)

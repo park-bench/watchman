@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 
-# Copyright 2015-2018 Joel Allen Luellwitz and Andrew Klapp
+# Copyright 2015-2018 Joel Allen Luellwitz, Andrew Klapp, and Brittney
+# Scaccia
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -52,7 +53,7 @@ class WatchmanSubprocess:
         print('Verifying configuration.')
         config_helper = confighelper.ConfigHelper()
 
-        log_level = config_helper.verify_string_exists_prelogging(config_parser, 'log_level')
+        log_level = config_helper.verify_string_exists(config_parser, 'log_level')
 
         config_helper.configure_logger(LOG_PATHNAME, log_level)
         self.logger = logging.getLogger()
@@ -75,9 +76,6 @@ class WatchmanSubprocess:
         self.last_trigger_motion = None
 
         self.video_device_number = int(sys.argv[1])
-
-        # Read gpgmailer watch directory from the gpgmailer config file.
-        gpgmailmessage.GpgMailMessage.configure()
 
     def start_loop(self):
 
