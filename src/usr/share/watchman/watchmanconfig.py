@@ -50,9 +50,6 @@ class WatchmanConfig:
         self.initial_frame_skip_count = config_helper.verify_integer_exists(
             config_parser, 'initial_frame_skip_count')
 
-        self.image_save_path = config_helper.verify_string_exists(
-            config_parser, 'image_save_path')
-
         # Subject on motion detection e-mails
         self.motion_detection_email_subject = config_helper.verify_string_exists(
             config_parser, 'motion_detection_email_subject')

@@ -12,9 +12,6 @@ video_device_number=0
 #   Set to zero to disable.
 initial_frame_skip_count=5
 
-# Directory to save the images to.
-image_save_path=/var/log/watchman/images/
-
 # Subject for e-mails containing images after motion detection. This should probably be
 #   something vague.
 motion_detection_email_subject=Encrypted message from your server.

@@ -45,7 +45,9 @@ CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_
 SYSTEM_PID_DIR = '/run'
 PROGRAM_PID_DIRS = PROGRAM_NAME
 PID_FILE = '%s.pid' % PROGRAM_NAME
-LOG_DIR = os.path.join('/var/log', PROGRAM_NAME)
+SYSTEM_LOG_DIR = '/var/log'
+PROGRAM_LOG_DIR = os.path.join(SYSTEM_LOG_DIR, PROGRAM_NAME)
+IMAGE_DIRS = os.path.join(PROGRAM_NAME, 'images')
 LOG_FILE = '%s.log' % PROGRAM_NAME
 PROCESS_USERNAME = PROGRAM_NAME
 PROCESS_GROUP_NAME = PROGRAM_NAME
@@ -94,19 +96,17 @@ def read_configuration_and_create_logger(program_uid, program_gid):
         stat.S_IROTH | stat.S_IXOTH  # drwxr-xr-x watchman watchman
     # TODO: Look into defaulting the logging to the console until the program gets more
     #   bootstrapped.
-    print('Creating logging directory %s.' % LOG_DIR)
-    if not os.path.isdir(LOG_DIR):
+    print('Creating logging directory %s.' % PROGRAM_LOG_DIR)
+    if not os.path.isdir(PROGRAM_LOG_DIR):
         # Will throw exception if file cannot be created.
-        os.makedirs(LOG_DIR, log_mode)
-    os.chown(LOG_DIR, program_uid, program_gid)
-    os.chmod(LOG_DIR, log_mode)
+        os.makedirs(PROGRAM_LOG_DIR, log_mode)
+    os.chown(PROGRAM_LOG_DIR, program_uid, program_gid)
+    os.chmod(PROGRAM_LOG_DIR, log_mode)
 
     # Temporarily drop permission and create the handle to the logger.
     os.setegid(program_gid)
     os.seteuid(program_uid)
-    config_helper.configure_logger(os.path.join(LOG_DIR, LOG_FILE), config['log_level'])
-    os.seteuid(os.getuid())
-    os.setegid(os.getgid())
+    config_helper.configure_logger(os.path.join(PROGRAM_LOG_DIR, LOG_FILE), config['log_level'])
 
     logger = logging.getLogger('%s-daemon' % PROGRAM_NAME)
 
@@ -202,6 +202,7 @@ def main_loop(config):
 
     config: The program configuration object, mostly based on the configuration file.
     """
+    global watchman_subprocess
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
 
     # Loop forever.
@@ -244,6 +245,15 @@ config, config_helper, logger = read_configuration_and_create_logger(
 
 watchman_subprocess = None
 try:
+    # Restore root permissions.
+    os.seteuid(os.getuid())
+    os.setegid(os.getgid())
+
+    create_directory(
+        SYSTEM_LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
+        stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP |
+        stat.S_IROTH | stat.S_IXOTH)  # drwxr-xr-x watchman watchman
+
     # Non-root users cannot create files in /run, so create a directory that can be written
     #   to. Full access to user only.
     create_directory(

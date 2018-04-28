@@ -26,7 +26,6 @@ __all__ = ['WatchmanSubprocess']
 __author__ = 'Joel Luellwitz and Andrew Klapp'
 __version__ = '0.8'
 
-import watchmanconfig
 import confighelper
 import ConfigParser
 import cv2
@@ -34,11 +33,16 @@ import datetime
 import gpgmailmessage
 import logging
 import math
+import os
 import random
 import sys
+import traceback
+import watchmanconfig
 
 # Constants
-LOG_PATHNAME = '/var/log/watchman/watchman-subprocess.log'
+LOG_DIRS = '/var/log/watchman'
+LOG_PATHNAME = os.path.join(LOG_DIRS, 'watchman-subprocess.log')
+IMAGES_PATH = os.path.join(LOG_DIRS, 'images')
 
 
 class WatchmanSubprocess:
@@ -193,9 +197,9 @@ class WatchmanSubprocess:
                 # Save the image?
                 if current_frame['save'] is True:
 
-                    pathname = '%s%s.jpg' % (
-                        self.config.image_save_path,
-                        current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f'))
+                    pathname = os.path.join(
+                        IMAGES_PATH,
+                        current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f.jpg'))
                     cv2.imwrite(pathname, current_frame['rotated_image'])
 
                 self._send_still_running_notification(current_frame)
@@ -531,4 +535,9 @@ class WatchmanSubprocess:
 
 # TODO: Consider making sure this class owns the process.
 watchman_subprocess = WatchmanSubprocess()
-watchman_subprocess.start_loop()
+try:
+    watchman_subprocess.start_loop()
+except Exception as exception:
+    # TODO: This is using an internal object variable.
+    watchman_subprocess.logger.critical('Fatal %s: %s\n%s' % (type(exception).__name__,
+                                        exception.message, traceback.format_exc()))
