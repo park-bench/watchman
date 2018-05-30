@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: Consider detecting and sending the most interesting images.
-# TODO: Consider using facial detection.
+# TODO #5: Consider detecting and sending the most interesting images.
+# TODO #5: Consider using facial detection.
 
 from __future__ import division
 
@@ -58,7 +58,7 @@ class WatchmanSubprocess:
         self.config = watchmanconfig.WatchmanConfig(config_file)
 
         self.subtractor = self._create_background_subtractor()
-        # TODO: See if there is a better option than to create another background subtractor.
+        # TODO #6: See if there is a better option than to create another background subtractor.
         self.replacement_subtractor = None
         self.replacement_subtractor_frame_count = 0
         self.subtractor_motion_start_time = None
@@ -106,6 +106,8 @@ class WatchmanSubprocess:
 
                 self._detect_motion(frame_count, current_frame)
 
+                # Not making an issue for this because I don't know what these half-baked
+                #   ideas are.
                 # TODO: The following code and comments are half baked ideas.  I need to fix
                 #   something now so I'll leave them commented.
                 # TODO: The following shouldn't always return. Maybe return by reference?
@@ -272,6 +274,7 @@ class WatchmanSubprocess:
                 self.last_trigger_motion = now
                 if (self.first_trigger_motion is not None):
                     self.first_trigger_motion = now
+                    # Not making an issue because I assume it will be deleted soon.
                     # TODO: Remove if setting first threshold to 0 works.
                     #self.email_frames.append(current_frame)
                     #current_frame['save'] = True
@@ -280,6 +283,7 @@ class WatchmanSubprocess:
             if (len(self.prior_movements)):
                 self.prior_movements = [now] + self.prior_movements[:-1]
 
+    # Not making an issue because this TODO is too vague.
     # TODO: This is a work in progress.
     def _processInitialEmails(
             self, period_start_time, email_image_save_times, email_delay, last_frame,
@@ -339,7 +343,7 @@ class WatchmanSubprocess:
         frame_dict['time'] = datetime.datetime.now()
         frame_dict['image'] = image
         # Remove the 'background'.  Basically this removes noise.
-        # TODO: I might have found the solution to our background subtractor problem:
+        # TODO #6: I might have found the solution to our background subtractor problem:
         #   https://stackoverflow.com/questions/26741081/opencv-python-cv2-backgroundsubtractor-parameters
         #   Consider explicitly setting learningRate when apply is called.
         frame_dict['subtracted_image'] = self.subtractor.apply(image)
@@ -365,7 +369,7 @@ class WatchmanSubprocess:
                 self.email_frames.append(current_frame)
                 break
 
-    # TODO: Consider returning False if start_time is null.
+    # TODO #7: Consider returning False if start_time is null.
     def _did_threshold_trigger(self, start_time, last_frame, current_frame, threshold):
         """Compares previous and current frame times against a start time to see if enough
         time as elapsed to trigger a threshold.
@@ -478,7 +482,7 @@ class WatchmanSubprocess:
                 #cv2.imshow('Rotated Image', frame['rotated_image'])
                 #cv2.waitKey(0)
 
-    # TODO: This is probably temporary code to quickly get around a bug.  This is why this
+    # TODO #6: This is probably temporary code to quickly get around a bug.  This is why this
     #   code is so self contained.
     def _process_replacement_subtractor(self, last_frame, current_frame):
         """Creates the replacement subtractor and replaces the main subtractor after
@@ -523,12 +527,12 @@ class WatchmanSubprocess:
         # I typically hate one line methods, but it is used in two places and is likely to
         #   change.
 
-        # TODO: Consider switching to Python 3 to use more advanced background subtraction
+        # TODO #8: Consider switching to Python 3 to use more advanced background subtraction
         #   algorithms.
         return cv2.BackgroundSubtractorMOG()
         #return cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
 
-# TODO: Consider making sure this class owns the process.
+# TODO #9: Consider making sure this class owns the process.
 watchman_subprocess = WatchmanSubprocess()
 watchman_subprocess.start_loop()

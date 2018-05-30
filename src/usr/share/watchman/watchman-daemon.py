@@ -54,10 +54,11 @@ subprocess_pathname = config_helper.verify_string_exists(config_file, 'subproces
 watchmanconfig.WatchmanConfig(config_file)
 
 # The device we want to capture video with.
-# TODO: Consider validating for a malicious path.
+# TODO #3: Consider validating for a malicious path.
 video_device_number = config_helper.verify_integer_exists(config_file, 'video_device_number')
 
 
+# Not making an issue for this because daemonize should disappear soon.
 # TODO: Move this to common library.
 def daemonize():
     # Fork the first time to make init our parent.
@@ -69,6 +70,7 @@ def daemonize():
         raise Exception('Failed to make parent process init: %d (%s)' % (
             e.errno, e.strerror))
 
+    # Not making an issue for this because daemonize should disappear soon.
     # TODO: Consider changing these to be more restrictive
     os.chdir('/')  # Change the working directory
     os.setsid()  # Create a new process session.
@@ -131,7 +133,7 @@ try:
         # Kill the subprocess so it can be restarted.
         try:
             logger.info('Detected device removal. Killing watchman subprocess.')
-            # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a
+            # TODO #4: Send a signal to watchman to flush its current e-mail buffer, give it a
             #   second then do a kill or kill -9.
             watchman_subprocess.kill()
         except OSError as e:
