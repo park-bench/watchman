@@ -274,7 +274,7 @@ class WatchmanSubprocess:
             if (prior_movement_time == 'End'):
                 #self.logger.debug('Motion Detected')
                 self.last_trigger_motion = now
-                if (self.first_trigger_motion is not None):
+                if (self.first_trigger_motion is None):
                     self.first_trigger_motion = now
                     # TODO: Remove if setting first threshold to 0 works.
                     #self.email_frames.append(current_frame)
@@ -529,7 +529,7 @@ class WatchmanSubprocess:
 
         # TODO: Consider switching to Python 3 to use more advanced background subtraction
         #   algorithms.
-        return cv2.BackgroundSubtractorMOG()
+        return cv2.bgsegm.createBackgroundSubtractorMOG()
         #return cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
 
