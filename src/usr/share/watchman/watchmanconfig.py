@@ -17,8 +17,8 @@ __all__ = ['WatchmanConfig']
 __author__ = 'Joel Luellwitz and Andrew Klapp'
 __version__ = '0.8'
 
-import confighelper
 import logging
+import confighelper
 
 
 class WatchmanConfig:
@@ -27,7 +27,8 @@ class WatchmanConfig:
     """
 
     def __init__(self, config_parser):
-        """Reads the watchman configuration file and exits the program if there is an error.
+        """Reads the watchman configuration file and throws an excpetion if there is an
+        error.
 
         config_parser: The ConfigParser instance the configuration is read from.
         """

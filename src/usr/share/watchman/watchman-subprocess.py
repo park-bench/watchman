@@ -26,17 +26,17 @@ __all__ = ['WatchmanSubprocess']
 __author__ = 'Joel Luellwitz and Andrew Klapp'
 __version__ = '0.8'
 
-import confighelper
-import ConfigParser
-import cv2
 import datetime
-import gpgmailmessage
+import ConfigParser
 import logging
 import math
 import os
 import random
 import sys
 import traceback
+import confighelper
+import cv2
+import gpgmailmessage
 import watchmanconfig
 
 # Constants
@@ -126,8 +126,8 @@ class WatchmanSubprocess:
                 # Grab images for the first e-mail.
                 if self.first_trigger_motion is not None:
                     self._store_email_frames_on_threshold(
-                         self.first_trigger_motion, last_frame, current_frame,
-                         self.config.first_email_image_save_times)
+                        self.first_trigger_motion, last_frame, current_frame,
+                        self.config.first_email_image_save_times)
 
                 # Send first e-mail after so many seconds.
                 if self.first_trigger_motion is not None and self._did_threshold_trigger(
@@ -185,7 +185,7 @@ class WatchmanSubprocess:
                         self.config.stop_threshold):
 
                     # Clear out the image buffer if images exist.
-                    if len(self.email_frames) > 0:
+                    if self.email_frames:
                         self._send_image_emails('Continued motion.', current_frame)
 
                     self.first_trigger_motion = None
@@ -271,7 +271,7 @@ class WatchmanSubprocess:
                 if (prior_movement_time is not None and prior_movement_time != 'End'):
                     time_difference = now - prior_movement_time
 
-            if (prior_movement_time == 'End'):
+            if prior_movement_time == 'End':
                 #self.logger.debug('Motion Detected')
                 self.last_trigger_motion = now
                 if (self.first_trigger_motion is None):
@@ -281,7 +281,7 @@ class WatchmanSubprocess:
                     #current_frame['save'] = True
 
             # Move the array contents down one, discard the oldest and add the new one
-            if (len(self.prior_movements)):
+            if self.prior_movements:
                 self.prior_movements = [now] + self.prior_movements[:-1]
 
     # TODO: This is a work in progress.
@@ -292,13 +292,13 @@ class WatchmanSubprocess:
         email_sent_time = None
 
         # Grab images for the e-mail
-        if (period_start_time is not None):
+        if period_start_time is not None:
             self._store_email_frames_on_threshold(
                 period_start_time, last_frame, current_frame, email_image_save_times)
 
         # Send first e-mail after so many seconds
-        if (period_start_time is not None and self._did_threshold_trigger(
-                period_start_time, last_frame, current_frame, email_delay)):
+        if period_start_time is not None and self._did_threshold_trigger(
+                period_start_time, last_frame, current_frame, email_delay):
             self._send_image_emails(message, current_frame)
             email_sent_time = period_start_time + datetime.timedelta(0, email_delay)
 
@@ -394,9 +394,9 @@ class WatchmanSubprocess:
 
         email.set_subject(self.config.motion_detection_email_subject)
         email.set_body(
-                '%s E-mail queued at %s. Current abs_diff_mean_total: %f' %
-                (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
-                 current_frame['abs_diff_mean_total']))
+            '%s E-mail queued at %s. Current abs_diff_mean_total: %f' %
+            (message, current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'),
+             current_frame['abs_diff_mean_total']))
 
         # Process all the frames
         for frame in self.email_frames:
@@ -408,7 +408,7 @@ class WatchmanSubprocess:
             if desired_image_width < current_image_width:
                 # Images are scaled proportionally.
                 desired_image_height = int(desired_image_width * (current_image_height /
-                                           current_image_width))
+                                                                  current_image_width))
                 small_frame = cv2.resize(frame['rotated_image'],
                                          (desired_image_width, desired_image_height))
             else:
@@ -539,5 +539,5 @@ try:
     watchman_subprocess.start_loop()
 except Exception as exception:
     # TODO: This is using an internal object variable.
-    watchman_subprocess.logger.critical('Fatal %s: %s\n%s' % (type(exception).__name__,
-                                        exception.message, traceback.format_exc()))
+    watchman_subprocess.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
+                                        str(exception), traceback.format_exc())

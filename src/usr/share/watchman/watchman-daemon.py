@@ -18,18 +18,11 @@
 __author__ = 'Joel Luellwitz and Andrew Klapp'
 __version__ = '0.8'
 
-import confighelper
 import ConfigParser
-import daemon
 import glob
 import grp
 import logging
 import os
-# TODO: Remove try/except when we drop support for Ubuntu 14.04 LTS.
-try:
-    from lockfile import pidlockfile
-except ImportError:
-    from daemon import pidlockfile
 import pwd
 import signal
 import subprocess
@@ -37,6 +30,9 @@ import stat
 import sys
 import time
 import traceback
+import daemon
+from lockfile import pidlockfile
+import confighelper
 import watchmanconfig
 
 # Constants
@@ -65,11 +61,17 @@ def get_user_and_group_ids():
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
-        raise Exception('User %s does not exist.' % PROCESS_USERNAME, key_error)
+        # TODO: Convert to chained exception after Python 3 conversion.
+        print('User %s does not exist. %s: %s' % (
+            PROCESS_USERNAME, type(key_error).__name__, str(key_error)))
+        raise key_error
     try:
         program_group = grp.getgrnam(PROCESS_GROUP_NAME)
     except KeyError as key_error:
-        raise Exception('Group %s does not exist.' % PROCESS_GROUP_NAME, key_error)
+        # TODO: Convert to chained exception after Python 3 conversion.
+        print('Group %s does not exist. %s: %s' % (
+            PROCESS_GROUP_NAME, type(key_error).__name__, str(key_error)))
+        raise key_error
 
     return program_user.pw_uid, program_group.gr_gid
 
@@ -89,17 +91,15 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     # Logging config goes first.
     config = {}
     config_helper = confighelper.ConfigHelper()
-    config['log_level'] = config_helper.verify_string_exists(
-        config_parser, 'log_level')
+    config['log_level'] = config_helper.verify_string_exists(config_parser, 'log_level')
 
-    # Create logging directory.
-    log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | \
-        stat.S_IROTH | stat.S_IXOTH  # drwxr-xr-x watchman watchman
+    # Create logging directory.  drwxr-x--- watchman watchman
+    log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP
     # TODO: Look into defaulting the logging to the console until the program gets more
     #   bootstrapped.
     print('Creating logging directory %s.' % PROGRAM_LOG_DIR)
     if not os.path.isdir(PROGRAM_LOG_DIR):
-        # Will throw exception if file cannot be created.
+        # Will throw exception if directory cannot be created.
         os.makedirs(PROGRAM_LOG_DIR, log_mode)
     os.chown(PROGRAM_LOG_DIR, program_uid, program_gid)
     os.chmod(PROGRAM_LOG_DIR, log_mode)
@@ -129,10 +129,10 @@ def create_directory(system_path, program_dirs, uid, gid, mode):
     program_dirs: A string representing additional directories that should be created under
       the system path that should take on the following ownership and permissions.
     uid: The system user ID that should own the directory.
-    gid: The system group ID that should own be associated with the directory.
-    mode: The umask of the directory access permissions.
+    gid: The system group ID that should be associated with the directory.
+    mode: The unix standard 'mode bits' that should be associated with the directory.
     """
-    logger.info('Creating directory %s.' % os.path.join(system_path, program_dirs))
+    logger.info('Creating directory %s.', os.path.join(system_path, program_dirs))
 
     path = system_path
     for directory in program_dirs.strip('/').split('/'):
@@ -150,7 +150,7 @@ def drop_permissions_forever(uid, gid):
     uid: The system user ID to drop to.
     gid: The system group ID to drop to.
     """
-    logger.info('Dropping permissions for user %s.' % PROCESS_USERNAME)
+    logger.info('Dropping permissions for user %s.', PROCESS_USERNAME)
     os.initgroups(PROCESS_USERNAME, gid)
     os.setgid(gid)
     os.setuid(uid)
@@ -191,7 +191,7 @@ def setup_daemon_context(log_file_handle, program_uid, program_gid):
 
     daemon_context.files_preserve = [log_file_handle]
 
-    # Set the UID and PID to 'watchman' user and group.
+    # Set the UID and GID to 'watchman' user and group.
     daemon_context.uid = program_uid
     daemon_context.gid = program_gid
 
@@ -210,20 +210,19 @@ def main_loop(config):
     while True:
 
         # Wait for the device to show up.
-        while len(glob.glob(selected_device_pathname)) == 0:
+        while not glob.glob(selected_device_pathname):
             time.sleep(.1)
 
-        logger.info("Detected video device %s." % selected_device_pathname)
+        logger.info("Detected video device %s.", selected_device_pathname)
 
         # Startup the subprocess to that takes photos.
         logger.info(
-            "Starting watchman subprocess with device %s." % selected_device_pathname)
+            "Starting watchman subprocess with device %s.", selected_device_pathname)
         watchman_subprocess = subprocess.Popen(
             [SUBPROCESS_PATHNAME, '%d' % config.video_device_number])
 
         # Loop while the device exists and the subprocess is still running.
-        while len(glob.glob(selected_device_pathname)) == 1 and \
-                watchman_subprocess.poll() is None:
+        while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
             time.sleep(.1)
 
         # Kill the subprocess so it can be restarted.
@@ -232,10 +231,10 @@ def main_loop(config):
             # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a
             #   second then do a kill or kill -9.
             watchman_subprocess.kill()
-        except OSError as e:
-            logger.error('Error killing watchman subprocess. %s: %s' % (
-                type(e).__name__, e.message))
-            logger.error('%s' % traceback.format_exc())
+        except OSError as os_error:
+            logger.error('Error killing watchman subprocess. %s: %s',
+                         type(os_error).__name__, str(os_error))
+            logger.error('%s', traceback.format_exc())
             logger.error('Ignoring.')  # The subprocess might no longer exist.
 
 
@@ -251,10 +250,10 @@ try:
     os.seteuid(os.getuid())
     os.setegid(os.getgid())
 
+    # drwxr-x--- watchman watchman
     create_directory(
         SYSTEM_LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
-        stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP |
-        stat.S_IROTH | stat.S_IXOTH)  # drwxr-xr-x watchman watchman
+        stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
 
     # Non-root users cannot create files in /run, so create a directory that can be written
     #   to. Full access to user only.
@@ -272,7 +271,7 @@ try:
         main_loop(config)
 
 except Exception as exception:
-    logger.critical('Fatal %s: %s' % (type(exception).__name__, exception.message))
+    logger.critical('Fatal %s: %s', type(exception).__name__, str(exception))
     logger.critical(traceback.format_exc())
     if watchman_subprocess is not None:
         logger.critical('Killing watchman subprocess.')
