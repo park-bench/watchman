@@ -113,7 +113,8 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     # Temporarily drop permission and create the handle to the logger.
     os.setegid(program_gid)
     os.seteuid(program_uid)
-    config_helper.configure_logger(os.path.join(PROGRAM_LOG_DIR, LOG_FILE), config['log_level'])
+    config_helper.configure_logger(os.path.join(PROGRAM_LOG_DIR, LOG_FILE),
+                                   config['log_level'])
 
     logger = logging.getLogger('%s-daemon' % PROGRAM_NAME)
 
@@ -126,15 +127,19 @@ def read_configuration_and_create_logger(program_uid, program_gid):
 
 
 # TODO: Consider checking ACLs. (gpgmailer issue 22)
-def verify_safe_file_permissions():
+def verify_safe_file_permissions(program_uid):
     """Crashes the application if unsafe file permissions exist on application configuration
     files.
+
+    program_uid: The system user ID that should own the configuration file.
     """
-    # The configuration file should be owned by root.
+    # Unlike other Parkbench programs, the configuration file should be owned by 'gpgmailer'
+    #   because the subprocess (running as gpgmailer) needs to be able to read the
+    #   configuration file.
     config_file_stat = os.stat(CONFIGURATION_PATHNAME)
-    if config_file_stat.st_uid != 0:
+    if config_file_stat.st_uid != program_uid:
         raise InitializationException(
-            'File %s must be owned by root.' % CONFIGURATION_PATHNAME)
+            'File %s must be owned by %s.' % (CONFIGURATION_PATHNAME, PROGRAM_NAME))
     if bool(config_file_stat.st_mode & (stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)):
         raise InitializationException(
             "File %s cannot have 'other user' access permissions set."
@@ -268,7 +273,7 @@ config, config_helper, logger = read_configuration_and_create_logger(
 
 watchman_subprocess = None
 try:
-    verify_safe_file_permissions()
+    verify_safe_file_permissions(program_uid)
 
     # Re-establish root permissions to create required directories.
     os.seteuid(os.getuid())

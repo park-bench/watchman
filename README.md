@@ -43,9 +43,11 @@ _torwatchdog_ depends on two other Parkbench projects which must be installed fi
     `/etc/watchman/watchman.conf`. Edit this file to change any configuration settings.
 6.  Use `chmod` to clear the _other user_ permissions bits of `watchman.conf`. Namely, remove
     read, write, and execute permissions for _other_.
-7.  To ease system maintenance, add `watchman` as a supplimental group to administrative
+7.  Use `chown` to change the ownership of `watchman.conf` to be owned by the `watchman`
+    user.
+8.  To ease system maintenance, add `watchman` as a supplimental group to administrative
     users. Doing this will allow these users to view watchman log files.
-8.  Restart the daemon with `systemctl restart watchman`. If the configuration file is valid,
+9.  Restart the daemon with `systemctl restart watchman`. If the configuration file is valid,
     named correctly, and has the correct file permissions, the service will start
     successfully.
 
