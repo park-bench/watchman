@@ -116,7 +116,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     config_helper.configure_logger(os.path.join(PROGRAM_LOG_DIR, LOG_FILE),
                                    config['log_level'])
 
-    logger = logging.getLogger('%s-daemon' % PROGRAM_NAME)
+    logger = logging.getLogger(__name__)
 
     logger.info('Verifying non-logging configuration.')
 
@@ -133,8 +133,8 @@ def verify_safe_file_permissions(program_uid):
 
     program_uid: The system user ID that should own the configuration file.
     """
-    # Unlike other Parkbench programs, the configuration file should be owned by 'gpgmailer'
-    #   because the subprocess (running as gpgmailer) needs to be able to read the
+    # Unlike other Parkbench programs, the configuration file should be owned by 'watchman'
+    #   because the subprocess (running as watchman) needs to be able to read the
     #   configuration file.
     config_file_stat = os.stat(CONFIGURATION_PATHNAME)
     if config_file_stat.st_uid != program_uid:

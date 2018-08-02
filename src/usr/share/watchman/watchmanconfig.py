@@ -21,13 +21,13 @@ import logging
 import confighelper
 
 
-class WatchmanConfig:
+class WatchmanConfig(object):
     """Loads the configuration for the 'watchman' program.  An instance of this object
     contains all the configuration values.
     """
 
     def __init__(self, config_parser):
-        """Reads the watchman configuration file and throws an excpetion if there is an
+        """Reads the watchman configuration file and throws an exception if there is an
         error.
 
         config_parser: The ConfigParser instance the configuration is read from.
@@ -43,54 +43,54 @@ class WatchmanConfig:
 
         # The number of the video device we want to capture photos with. Corresponds to the
         #   video device number that is in the Linux /dev directory.
-        self.video_device_number = config_helper.verify_integer_exists(
-            config_parser, 'video_device_number')
+        self.video_device_number = config_helper.verify_integer_within_range(
+            config_parser, 'video_device_number', lower_bound=0)
 
         # Skips this many frames before detecting motion.  Gives the camera a chance to warm
         #   up.  Set to zero to disable.
-        self.initial_frame_skip_count = config_helper.verify_integer_exists(
-            config_parser, 'initial_frame_skip_count')
+        self.initial_frame_skip_count = config_helper.verify_integer_within_range(
+            config_parser, 'initial_frame_skip_count', lower_bound=0)
 
         # Subject on motion detection e-mails
         self.motion_detection_email_subject = config_helper.verify_string_exists(
             config_parser, 'motion_detection_email_subject')
         # Time in seconds
-        self.movement_time_threshold = config_helper.verify_number_exists(
-            config_parser, 'movement_time_threshold')
+        self.movement_time_threshold = config_helper.verify_number_within_range(
+            config_parser, 'movement_time_threshold', lower_bound=0)
         # Can be increased to make movements less sensitive
-        self.prior_movements_per_threshold = config_helper.verify_integer_exists(
-            config_parser, 'prior_movements_per_threshold')
+        self.prior_movements_per_threshold = config_helper.verify_integer_within_range(
+            config_parser, 'prior_movements_per_threshold', lower_bound=0)
         # How much the two frames have to vary to be considered different
-        self.pixel_difference_threshold = config_helper.verify_number_exists(
-            config_parser, 'pixel_difference_threshold')
+        self.pixel_difference_threshold = config_helper.verify_number_within_range(
+            config_parser, 'pixel_difference_threshold', lower_bound=0)
         self.first_email_image_save_times = config_helper.verify_number_list_exists(
             config_parser, 'first_email_image_save_times')
         # Time in seconds before first e-mail
-        self.first_email_delay = config_helper.verify_number_exists(
-            config_parser, 'first_email_delay')
+        self.first_email_delay = config_helper.verify_number_within_range(
+            config_parser, 'first_email_delay', lower_bound=0)
         self.second_email_image_save_times = config_helper.verify_number_list_exists(
             config_parser, 'second_email_image_save_times')
-        # Time in seconds since last e-mail
-        self.second_email_delay = config_helper.verify_number_exists(
-            config_parser, 'second_email_delay')
+        # Time in seconds since first e-mail
+        self.second_email_delay = config_helper.verify_number_within_range(
+            config_parser, 'second_email_delay', lower_bound=0)
         self.third_email_image_save_times = config_helper.verify_number_list_exists(
             config_parser, 'third_email_image_save_times')
-        # Time in seconds since last e-mail
-        self.third_email_delay = config_helper.verify_number_exists(
-            config_parser, 'third_email_delay')
+        # Time in seconds since second e-mail
+        self.third_email_delay = config_helper.verify_number_within_range(
+            config_parser, 'third_email_delay', lower_bound=0)
         self.subsequent_email_image_save_times = config_helper.verify_number_list_exists(
             config_parser, 'subsequent_email_image_save_times')
         # Time in seconds since last e-mail
-        self.subsequent_email_delay = config_helper.verify_number_exists(
-            config_parser, 'subsequent_email_delay')
+        self.subsequent_email_delay = config_helper.verify_number_within_range(
+            config_parser, 'subsequent_email_delay', lower_bound=0)
         # Time in seconds since last e-mail triggering motion
-        self.stop_threshold = config_helper.verify_number_exists(
-            config_parser, 'stop_threshold')
+        self.stop_threshold = config_helper.verify_number_within_range(
+            config_parser, 'stop_threshold', lower_bound=0)
         # The maximum image width for images sent via the e-mail.  If the image width is
         #   smaller than this value, the image is sent as captured.  If the image width is
         #   larger than this value, the image is scaled proportionally before it is sent.
-        self.email_image_width = config_helper.verify_integer_exists(
-            config_parser, 'email_image_width')
+        self.email_image_width = config_helper.verify_integer_within_range(
+            config_parser, 'email_image_width', lower_bound=1)
 
         # Angle to rotate the images before they are saved or e-mailed. Only values of 0, 90,
         #   180, or 270 are permitted. This is useful if your camera is placed sideways or
@@ -98,16 +98,17 @@ class WatchmanConfig:
         self.image_rotation_angle = config_helper.verify_valid_integer_in_list(
             config_parser, 'image_rotation_angle', (0, 90, 180, 270))
 
-        self.image_save_throttle_delay = config_helper.verify_number_exists(
-            config_parser, 'image_save_throttle_delay')
+        self.image_save_throttle_delay = config_helper.verify_number_within_range(
+            config_parser, 'image_save_throttle_delay', lower_bound=0)
 
         # Subject for still running notification.
         self.still_running_email_subject = config_helper.verify_string_exists(
             config_parser, 'still_running_email_subject')
         # Maximum time in days before still running notification is sent.
-        self.still_running_email_max_delay = config_helper.verify_number_exists(
-            config_parser, 'still_running_email_max_delay')
+        self.still_running_email_max_delay = config_helper.verify_number_within_range(
+            config_parser, 'still_running_email_max_delay', lower_bound=0)
 
         # Number of seconds until subtractor is replaced during a motion detection period.
-        self.replacement_subtractor_creation_threshold = config_helper.verify_number_exists(
-            config_parser, 'replacement_subtractor_creation_threshold')
+        self.replacement_subtractor_creation_threshold = \
+            config_helper.verify_number_within_range(
+                config_parser, 'replacement_subtractor_creation_threshold', lower_bound=0)

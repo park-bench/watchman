@@ -45,7 +45,7 @@ _torwatchdog_ depends on two other Parkbench projects which must be installed fi
     read, write, and execute permissions for _other_.
 7.  Use `chown` to change the ownership of `watchman.conf` to be owned by the `watchman`
     user.
-8.  To ease system maintenance, add `watchman` as a supplimental group to administrative
+8.  To ease system maintenance, add `watchman` as a supplemental group to administrative
     users. Doing this will allow these users to view watchman log files.
 9.  Restart the daemon with `systemctl restart watchman`. If the configuration file is valid,
     named correctly, and has the correct file permissions, the service will start

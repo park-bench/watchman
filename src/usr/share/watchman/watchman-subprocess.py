@@ -45,7 +45,11 @@ LOG_PATHNAME = os.path.join(LOG_DIRS, 'watchman-subprocess.log')
 IMAGES_PATH = os.path.join(LOG_DIRS, 'images')
 
 
-class WatchmanSubprocess:
+class WatchmanSubprocess(object):
+    """Monitors a camera, sending e-mails and saving images when motion is detected.  This
+    class runs in its own process because OpenCV does not support device removal.  The work
+    around is to kill this process when the camera device disappears.
+    """
 
     def __init__(self):
 
@@ -60,7 +64,7 @@ class WatchmanSubprocess:
         log_level = config_helper.verify_string_exists(config_parser, 'log_level')
 
         config_helper.configure_logger(LOG_PATHNAME, log_level)
-        self.logger = logging.getLogger()
+        self.logger = logging.getLogger(__name__)
 
         self.config = watchmanconfig.WatchmanConfig(config_parser)
 
@@ -82,6 +86,7 @@ class WatchmanSubprocess:
         self.video_device_number = int(sys.argv[1])
 
     def start_loop(self):
+        """The main program loop monitoring a camera."""
 
         try:
             # Open the camera.
@@ -244,17 +249,17 @@ class WatchmanSubprocess:
         marks images to be saved locally.
         """
 
-        if (frame_count > self.config.initial_frame_skip_count and
-                current_frame['abs_diff_mean_total'] >
-                self.config.pixel_difference_threshold):
+        if frame_count > self.config.initial_frame_skip_count and \
+                current_frame['abs_diff_mean_total'] > \
+                self.config.pixel_difference_threshold:
 
             # Obtain the time of the differnce.
             now = current_frame['time']
 
             # Make sure a specific amount of time has passed since the last local image save.
             #   (E-mail initiated saves do not count.)
-            if ((current_frame['time'] - self.last_image_save_time) >=
-                    datetime.timedelta(seconds=self.config.image_save_throttle_delay)):
+            if (current_frame['time'] - self.last_image_save_time) >= \
+                    datetime.timedelta(seconds=self.config.image_save_throttle_delay):
 
                 # Mark the image to be saved.
                 self.last_image_save_time = current_frame['time']
@@ -263,18 +268,18 @@ class WatchmanSubprocess:
             # See if there has been another difference in the last second.
             prior_movements_iterator = iter(self.prior_movements)
             prior_movement_time = next(prior_movements_iterator, 'End')
-            if (prior_movement_time is not None and prior_movement_time != 'End'):
+            if prior_movement_time is not None and prior_movement_time != 'End':
                 time_difference = now - prior_movement_time
-            while (prior_movement_time is not None and prior_movement_time != 'End' and
-                    time_difference.total_seconds() <= self.config.movement_time_threshold):
+            while prior_movement_time is not None and prior_movement_time != 'End' and \
+                    time_difference.total_seconds() <= self.config.movement_time_threshold:
                 prior_movement_time = next(prior_movements_iterator, 'End')
-                if (prior_movement_time is not None and prior_movement_time != 'End'):
+                if prior_movement_time is not None and prior_movement_time != 'End':
                     time_difference = now - prior_movement_time
 
             if prior_movement_time == 'End':
                 #self.logger.debug('Motion Detected')
                 self.last_trigger_motion = now
-                if (self.first_trigger_motion is None):
+                if self.first_trigger_motion is None:
                     self.first_trigger_motion = now
                     # TODO: Remove if setting first threshold to 0 works.
                     #self.email_frames.append(current_frame)
@@ -307,8 +312,8 @@ class WatchmanSubprocess:
     def _send_still_running_notification(self, current_frame):
         """Sends a still running notifcation e-mail if no e-mail has been sent in a while."""
 
-        if (current_frame['time'] > self.last_email_sent_time + datetime.timedelta(
-                seconds=self.next_still_running_email_delay)):
+        if current_frame['time'] > self.last_email_sent_time + datetime.timedelta(
+                seconds=self.next_still_running_email_delay):
 
             email = gpgmailmessage.GpgMailMessage()
             email.set_subject(self.config.still_running_email_subject)
@@ -378,7 +383,7 @@ class WatchmanSubprocess:
         threshold_triggered = False
         last_frame_difference = (last_frame['time'] - start_time).total_seconds()
         current_frame_difference = (current_frame['time'] - start_time).total_seconds()
-        if (last_frame_difference < threshold and current_frame_difference >= threshold):
+        if last_frame_difference < threshold and current_frame_difference >= threshold:
             threshold_triggered = True
         return threshold_triggered
 
@@ -495,8 +500,8 @@ class WatchmanSubprocess:
             self.subtractor_motion_start_time = None
 
         # Start the subtractor motion start time
-        if (self.first_trigger_motion is not None and
-                self.subtractor_motion_start_time is None):
+        if self.first_trigger_motion is not None and \
+                self.subtractor_motion_start_time is None:
             self.subtractor_motion_start_time = self.first_trigger_motion
 
         # Increment the replacement subtractor frame cound if it has processed frames.
@@ -514,9 +519,9 @@ class WatchmanSubprocess:
 
         # Collect a certain number of frames before we replace the main subtractor. Use
         #   the same number of frames used to initiate the main subtractor on program start.
-        if (self.replacement_subtractor is not None and
-                self.replacement_subtractor_frame_count >
-                self.config.initial_frame_skip_count):
+        if self.replacement_subtractor is not None and \
+                self.replacement_subtractor_frame_count > \
+                self.config.initial_frame_skip_count:
             self.logger.info('Replacing main background subtractor.')
             self.subtractor = self.replacement_subtractor
             self.replacement_subtractor = None
