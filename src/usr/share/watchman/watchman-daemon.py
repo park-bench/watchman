@@ -67,14 +67,14 @@ def get_user_and_group_ids():
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
-        # TODO: Convert to chained exception after Python 3 conversion.
+        # TODO: Convert to chained exception after Python 3 conversion. (gpgmailer issue 15)
         print('User %s does not exist. %s: %s' % (
             PROCESS_USERNAME, type(key_error).__name__, str(key_error)))
         raise key_error
     try:
         program_group = grp.getgrnam(PROCESS_GROUP_NAME)
     except KeyError as key_error:
-        # TODO: Convert to chained exception after Python 3 conversion.
+        # TODO: Convert to chained exception after Python 3 conversion. (gpgmailer issue 15)
         print('Group %s does not exist. %s: %s' % (
             PROCESS_GROUP_NAME, type(key_error).__name__, str(key_error)))
         raise key_error
@@ -102,7 +102,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     # Create logging directory.  drwxr-x--- watchman watchman
     log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP
     # TODO: Look into defaulting the logging to the console until the program gets more
-    #   bootstrapped.
+    #   bootstrapped. (gpgmailer issue 18)
     print('Creating logging directory %s.' % PROGRAM_LOG_DIR)
     if not os.path.isdir(PROGRAM_LOG_DIR):
         # Will throw exception if directory cannot be created.
@@ -240,13 +240,10 @@ def main_loop(config):
         while not glob.glob(selected_device_pathname):
             time.sleep(.1)
 
-        logger.info("Detected video device %s.", selected_device_pathname)
-
         # Startup the subprocess to that takes photos.
-        logger.info(
-            "Starting watchman subprocess with device %s.", selected_device_pathname)
-        watchman_subprocess = subprocess.Popen(
-            [SUBPROCESS_PATHNAME, '%d' % config.video_device_number])
+        logger.info("Detected video device %s. Starting watchman subprocess.",
+                    selected_device_pathname)
+        watchman_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
 
         # Loop while the device exists and the subprocess is still running.
         while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
@@ -256,7 +253,7 @@ def main_loop(config):
         try:
             logger.info('Detected device removal. Killing watchman subprocess.')
             # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a
-            #   second then do a kill or kill -9.
+            #   second then do a kill or kill -9. (issue 4)
             watchman_subprocess.kill()
         except OSError as os_error:
             logger.error('Error killing watchman subprocess. %s: %s',

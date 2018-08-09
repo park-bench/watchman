@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO: Consider running in a chroot or jail.
-# TODO: Consider detecting and sending the most interesting images.
-# TODO: Consider using facial detection.
+# TODO: Consider running in a chroot or jail. (gpgmailer issue 17)
+# TODO: Consider detecting and sending the most interesting images. (issue 5)
+# TODO: Consider using facial detection. (issue 5)
 
 from __future__ import division
 
@@ -32,7 +32,6 @@ import logging
 import math
 import os
 import random
-import sys
 import traceback
 import confighelper
 import cv2
@@ -70,6 +69,7 @@ class WatchmanSubprocess(object):
 
         self.subtractor = self._create_background_subtractor()
         # TODO: See if there is a better option than to create another background subtractor.
+        #   (issue 6)
         self.replacement_subtractor = None
         self.replacement_subtractor_frame_count = 0
         self.subtractor_motion_start_time = None
@@ -83,14 +83,12 @@ class WatchmanSubprocess(object):
         self.last_motion_email_sent = None
         self.last_trigger_motion = None
 
-        self.video_device_number = int(sys.argv[1])
-
     def start_loop(self):
         """The main program loop monitoring a camera."""
 
         try:
             # Open the camera.
-            self.capture_device = cv2.VideoCapture(self.video_device_number)
+            self.capture_device = cv2.VideoCapture(self.config.video_device_number)
             current_frame = self._capture_frame()  # Capture the first frame
             # These next couple lines are not exactly accurate, but they will do for now.
             self.last_image_save_time = current_frame['time']
@@ -102,7 +100,7 @@ class WatchmanSubprocess(object):
             # Sometimes we run this program interactively for debugging purposes.
             while cv2.waitKey(1) & 0xFF != ord('q'):
 
-                # This will never wrap around.  If there is a frame every millisecond, it
+                # This will never wrap around. If there is a frame every millisecond, it
                 #   would take millions of years for this value to exceed a 64 bit int, and
                 #   even if this value is exceeded, it converts to an "unlimited" long.
                 frame_count += 1
@@ -115,9 +113,10 @@ class WatchmanSubprocess(object):
 
                 self._detect_motion(frame_count, current_frame)
 
-                # TODO: The following code and comments are half baked ideas.  I need to fix
-                #   something now so I'll leave them commented.
+                # TODO: The following code and comments are half baked ideas. I need to fix
+                #   something now so I'll leave them commented. (issue 12)
                 # TODO: The following shouldn't always return. Maybe return by reference?
+                #   (issue 12)
                 #self.first_motion_email_sent = self._processInitialEmails(
                 #    self.first_trigger_motion, self.first_email_image_save_times,
                 #    last_frame, current_frame, 'Motion just detected.')
@@ -281,15 +280,12 @@ class WatchmanSubprocess(object):
                 self.last_trigger_motion = now
                 if self.first_trigger_motion is None:
                     self.first_trigger_motion = now
-                    # TODO: Remove if setting first threshold to 0 works.
-                    #self.email_frames.append(current_frame)
-                    #current_frame['save'] = True
 
             # Move the array contents down one, discard the oldest and add the new one
             if self.prior_movements:
                 self.prior_movements = [now] + self.prior_movements[:-1]
 
-    # TODO: This is a work in progress.
+    # TODO: This is a work in progress. (issue 12)
     def _processInitialEmails(
             self, period_start_time, email_image_save_times, email_delay, last_frame,
             current_frame, message):
@@ -350,7 +346,7 @@ class WatchmanSubprocess(object):
         # Remove the 'background'.  Basically this removes noise.
         # TODO: I might have found the solution to our background subtractor problem:
         #   https://stackoverflow.com/questions/26741081/opencv-python-cv2-backgroundsubtractor-parameters
-        #   Consider explicitly setting learningRate when apply is called.
+        #   Consider explicitly setting learningRate when apply is called. (issue 6)
         frame_dict['subtracted_image'] = self.subtractor.apply(image)
         #frame_dict['subtracted_image'] = cv2.morphologyEx(frame_dict['subtracted_image'], \
         #    cv2.MORPH_OPEN, kernel)
@@ -374,7 +370,7 @@ class WatchmanSubprocess(object):
                 self.email_frames.append(current_frame)
                 break
 
-    # TODO: Consider returning False if start_time is null.
+    # TODO: Consider returning False if start_time is null. (issue 7)
     def _did_threshold_trigger(self, start_time, last_frame, current_frame, threshold):
         """Compares previous and current frame times against a start time to see if enough
         time as elapsed to trigger a threshold.
@@ -488,7 +484,7 @@ class WatchmanSubprocess(object):
                 #cv2.waitKey(0)
 
     # TODO: This is probably temporary code to quickly get around a bug.  This is why this
-    #   code is so self contained.
+    #   code is so self contained. (issue 6)
     def _process_replacement_subtractor(self, last_frame, current_frame):
         """Creates the replacement subtractor and replaces the main subtractor after
         appropriate delays.
@@ -533,16 +529,17 @@ class WatchmanSubprocess(object):
         #   change.
 
         # TODO: Consider switching to Python 3 to use more advanced background subtraction
-        #   algorithms.
+        #   algorithms. (issue 8)
         return cv2.bgsegm.createBackgroundSubtractorMOG()
         #return cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
 
-# TODO: Consider making sure this class owns the process.
+# TODO: Consider making sure this class owns the process. (issue 9)
 watchman_subprocess = WatchmanSubprocess()
 try:
     watchman_subprocess.start_loop()
 except Exception as exception:
-    # TODO: This is using an internal object variable.
+    # TODO: This is using an internal object variable. Will probably be solved when we fix
+    #   gpgmailer issue 18.
     watchman_subprocess.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
                                         str(exception), traceback.format_exc())
