@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/python2
 
-# Copyright 2015-2018 Joel Allen Luellwitz and Andrew Klapp
+# Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,21 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = 'Joel Luellwitz and Andrew Klapp'
+"""Daemon to record and send images when motion is detected on a camera."""
+
+# TODO: Eventually consider running in a chroot or jail. (gpgmailer issue 17)
+
+__author__ = 'Joel Luellwitz and Emily Frost'
 __version__ = '0.8'
 
-import ConfigParser
 import glob
 import grp
 import logging
 import os
 import pwd
 import signal
-import subprocess
 import stat
+import subprocess
 import sys
 import time
 import traceback
+import ConfigParser
 import daemon
 from lockfile import pidlockfile
 import confighelper
@@ -41,9 +45,8 @@ CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_
 SYSTEM_PID_DIR = '/run'
 PROGRAM_PID_DIRS = PROGRAM_NAME
 PID_FILE = '%s.pid' % PROGRAM_NAME
-SYSTEM_LOG_DIR = '/var/log'
-PROGRAM_LOG_DIR = os.path.join(SYSTEM_LOG_DIR, PROGRAM_NAME)
-IMAGE_DIRS = os.path.join(PROGRAM_NAME, 'images')
+LOG_DIR = os.path.join('/var/log', PROGRAM_NAME)
+IMAGE_DIRS = 'images'
 LOG_FILE = '%s.log' % PROGRAM_NAME
 PROCESS_USERNAME = PROGRAM_NAME
 PROCESS_GROUP_NAME = PROGRAM_NAME
@@ -67,14 +70,16 @@ def get_user_and_group_ids():
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
-        # TODO: Convert to chained exception after Python 3 conversion. (gpgmailer issue 15)
+        # TODO: When switching to Python 3, convert to chained exception.
+        #   (gpgmailer issue 15)
         print('User %s does not exist. %s: %s' % (
             PROCESS_USERNAME, type(key_error).__name__, str(key_error)))
         raise key_error
     try:
         program_group = grp.getgrnam(PROCESS_GROUP_NAME)
     except KeyError as key_error:
-        # TODO: Convert to chained exception after Python 3 conversion. (gpgmailer issue 15)
+        # TODO: When switching to Python 3, convert to chained exception.
+        #   (gpgmailer issue 15)
         print('Group %s does not exist. %s: %s' % (
             PROCESS_GROUP_NAME, type(key_error).__name__, str(key_error)))
         raise key_error
@@ -83,7 +88,7 @@ def get_user_and_group_ids():
 
 
 def read_configuration_and_create_logger(program_uid, program_gid):
-    """Reads the configuration file and creates the application logger.  This is done in the
+    """Reads the configuration file and creates the application logger. This is done in the
     same function because part of the logger creation is dependent upon reading the
     configuration file.
 
@@ -91,39 +96,46 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     program_gid: The system group ID this program should drop to before daemonization.
     Returns the read system config, a confighelper instance, and a logger instance.
     """
-    config_parser = ConfigParser.SafeConfigParser()
-    config_parser.read(CONFIGURATION_PATHNAME)
+    print('Reading %s...' % CONFIGURATION_PATHNAME)
 
-    # Logging config goes first.
+    if not os.path.isfile(CONFIGURATION_PATHNAME):
+        raise InitializationException(
+            'Configuration file %s does not exist. Quitting.' % CONFIGURATION_PATHNAME)
+
+    config_file = ConfigParser.SafeConfigParser()
+    config_file.read(CONFIGURATION_PATHNAME)
+
     config = {}
     config_helper = confighelper.ConfigHelper()
-    config['log_level'] = config_helper.verify_string_exists(config_parser, 'log_level')
+    # Figure out the logging options so that can start before anything else.
+    # TODO: Eventually add a verify_string_list method. (gpgmailer issue 20)
+    config['log_level'] = config_helper.verify_string_exists(config_file, 'log_level')
 
     # Create logging directory.  drwxr-x--- watchman watchman
     log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP
     # TODO: Look into defaulting the logging to the console until the program gets more
     #   bootstrapped. (gpgmailer issue 18)
-    print('Creating logging directory %s.' % PROGRAM_LOG_DIR)
-    if not os.path.isdir(PROGRAM_LOG_DIR):
+    print('Creating logging directory %s.' % LOG_DIR)
+    if not os.path.isdir(LOG_DIR):
         # Will throw exception if directory cannot be created.
-        os.makedirs(PROGRAM_LOG_DIR, log_mode)
-    os.chown(PROGRAM_LOG_DIR, program_uid, program_gid)
-    os.chmod(PROGRAM_LOG_DIR, log_mode)
+        os.makedirs(LOG_DIR, log_mode)
+    os.chown(LOG_DIR, program_uid, program_gid)
+    os.chmod(LOG_DIR, log_mode)
 
-    # Temporarily drop permission and create the handle to the logger.
+    # Temporarily drop permissions and create the handle to the logger.
+    print('Configuring logger.')
     os.setegid(program_gid)
     os.seteuid(program_uid)
-    config_helper.configure_logger(os.path.join(PROGRAM_LOG_DIR, LOG_FILE),
-                                   config['log_level'])
+    config_helper.configure_logger(os.path.join(LOG_DIR, LOG_FILE), config['log_level'])
 
     logger = logging.getLogger(__name__)
 
     logger.info('Verifying non-logging configuration.')
 
-    # Parse the configuration file which is returned as an object.
-    config = watchmanconfig.WatchmanConfig(config_parser)
+    # Parse the configuration file. The parsed result is returned as an object.
+    config = watchmanconfig.WatchmanConfig(config_file)
 
-    return (config, config_helper, logger)
+    return config, config_helper, logger
 
 
 # TODO: Consider checking ACLs. (gpgmailer issue 22)
@@ -150,8 +162,8 @@ def create_directory(system_path, program_dirs, uid, gid, mode):
     """Creates directories if they do not exist and sets the specified ownership and
     permissions.
 
-    system_path: The system path that the directories should be created under.  These are
-      assumed to already exist.  The ownership and permissions on these directories are not
+    system_path: The system path that the directories should be created under. These are
+      assumed to already exist. The ownership and permissions on these directories are not
       modified.
     program_dirs: A string representing additional directories that should be created under
       the system path that should take on the following ownership and permissions.
@@ -184,12 +196,12 @@ def drop_permissions_forever(uid, gid):
 
 
 def sig_term_handler(signal, stack_frame):
-    """Signal handler for SIGTERM.  Quits when SIGTERM is received.
+    """Signal handler for SIGTERM. Quits when SIGTERM is received.
 
     signal: Object representing the signal thrown.
     stack_frame: Represents the stack frame.
     """
-    logger.info('Received SIGTERM, quitting.')
+    logger.info('SIGTERM received. Quitting.')
     if watchman_subprocess is not None:
         logger.info('Killing watchman subprocess.')
         watchman_subprocess.kill()
@@ -198,11 +210,11 @@ def sig_term_handler(signal, stack_frame):
 
 def setup_daemon_context(log_file_handle, program_uid, program_gid):
     """Creates the daemon context. Specifies daemon permissions, PID file information, and
-    signal handler.
+    the signal handler.
 
     log_file_handle: The file handle to the log file.
-    program_uid: The system user ID the daemon should run as.
-    program_gid: The system group ID the daemon should run as.
+    program_uid: The system user ID that should own the daemon process.
+    program_gid: The system group ID that should be assigned to the daemon process.
     Returns the daemon context.
     """
     daemon_context = daemon.DaemonContext(
@@ -210,11 +222,11 @@ def setup_daemon_context(log_file_handle, program_uid, program_gid):
         pidfile=pidlockfile.PIDLockFile(
             os.path.join(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, PID_FILE)),
         umask=PROGRAM_UMASK,
-        )
+    )
 
     daemon_context.signal_map = {
         signal.SIGTERM: sig_term_handler,
-        }
+    }
 
     daemon_context.files_preserve = [log_file_handle]
 
@@ -264,7 +276,6 @@ def main_loop(config):
 
 os.umask(PROGRAM_UMASK)
 program_uid, program_gid = get_user_and_group_ids()
-
 config, config_helper, logger = read_configuration_and_create_logger(
     program_uid, program_gid)
 
@@ -278,14 +289,13 @@ try:
 
     # drwxr-x--- watchman watchman
     create_directory(
-        SYSTEM_LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
+        LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
         stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
 
     # Non-root users cannot create files in /run, so create a directory that can be written
-    #   to. Full access to user only.
-    create_directory(
-        SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid,
-        stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)  # drwx------ watchman watchman
+    #   to. Full access to user only.  drwx------ watchman watchman
+    create_directory(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid,
+                     stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     # Configuration has been read and directories setup. Now drop permissions forever.
     drop_permissions_forever(program_uid, program_gid)
@@ -293,12 +303,13 @@ try:
     daemon_context = setup_daemon_context(
         config_helper.get_log_file_handle(), program_uid, program_gid)
 
+    logger.info('Daemonizing...')
     with daemon_context:
         main_loop(config)
 
 except Exception as exception:
-    logger.critical('Fatal %s: %s', type(exception).__name__, str(exception))
-    logger.critical(traceback.format_exc())
+    logger.critical('Fatal %s: %s\n%s', type(exception).__name__, str(exception),
+                    traceback.format_exc())
     if watchman_subprocess is not None:
         logger.critical('Killing watchman subprocess.')
         watchman_subprocess.kill()
