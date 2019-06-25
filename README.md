@@ -28,7 +28,7 @@ installing a Debian package. The rest of these instructions make the following a
 
 _torwatchdog_ depends on two other Parkbench projects which must be installed first:
 
-1.  [_confighelper_](https://github.com/park-bench/confighelper)
+1.  [_parkbench-common_](https://github.com/park-bench/parkbench-common)
 2.  [_gpgmailer_](https://github.com/park-bench/gpgmailer)
 
 ## Steps to Build and Install
