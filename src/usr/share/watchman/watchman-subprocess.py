@@ -32,7 +32,7 @@ import math
 import os
 import random
 import traceback
-import confighelper
+from parkbenchcommon import confighelper
 import cv2
 import gpgmailmessage
 import watchmanconfig

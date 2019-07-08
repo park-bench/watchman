@@ -18,7 +18,7 @@ __author__ = 'Joel Luellwitz and Andrew Klapp'
 __version__ = '0.8'
 
 import logging
-import confighelper
+from parkbenchcommon import confighelper
 
 
 class WatchmanConfig(object):

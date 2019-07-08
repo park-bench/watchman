@@ -36,7 +36,7 @@ import traceback
 import ConfigParser
 import daemon
 from lockfile import pidlockfile
-import confighelper
+from parkbenchcommon import confighelper
 import watchmanconfig
 
 # Constants
