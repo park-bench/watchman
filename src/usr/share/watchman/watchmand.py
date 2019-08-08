@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python3
 
 # Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
 #
@@ -33,7 +33,7 @@ import subprocess
 import sys
 import time
 import traceback
-import ConfigParser
+import configparser
 import daemon
 from lockfile import pidlockfile
 from parkbenchcommon import confighelper
@@ -70,19 +70,19 @@ def get_user_and_group_ids():
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
-        # TODO: When switching to Python 3, convert to chained exception.
-        #   (gpgmailer issue 15)
-        print('User %s does not exist. %s: %s' % (
-            PROCESS_USERNAME, type(key_error).__name__, str(key_error)))
-        raise key_error
+        message = 'User %s does not exist. %s: %s' % (PROCESS_USERNAME,
+                                                      type(key_error).__name__,
+                                                      str(key_error))
+        print(message)
+        raise InitializationException(message) from key_error
     try:
         program_group = grp.getgrnam(PROCESS_GROUP_NAME)
     except KeyError as key_error:
-        # TODO: When switching to Python 3, convert to chained exception.
-        #   (gpgmailer issue 15)
-        print('Group %s does not exist. %s: %s' % (
-            PROCESS_GROUP_NAME, type(key_error).__name__, str(key_error)))
-        raise key_error
+        message = 'Group %s does not exist. %s: %s' % (PROCESS_GROUP_NAME,
+                                                       type(key_error).__name__,
+                                                       str(key_error))
+        print(message)
+        raise InitializationException(message) from key_error
 
     return program_user.pw_uid, program_group.gr_gid
 
@@ -102,7 +102,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
         raise InitializationException(
             'Configuration file %s does not exist. Quitting.' % CONFIGURATION_PATHNAME)
 
-    config_file = ConfigParser.SafeConfigParser()
+    config_file = configparser.SafeConfigParser()
     config_file.read(CONFIGURATION_PATHNAME)
 
     config = {}

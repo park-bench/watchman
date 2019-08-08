@@ -1,6 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
-# Copyright 2015-2018 Joel Allen Luellwitz and Andrew Klapp
+# Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,14 +19,12 @@
 # TODO: Consider detecting and sending the most interesting images. (issue 5)
 # TODO: Consider using facial detection. (issue 5)
 
-from __future__ import division
-
 __all__ = ['WatchmanSubprocess']
-__author__ = 'Joel Luellwitz and Andrew Klapp'
+__author__ = 'Joel Luellwitz and Emily Frost'
 __version__ = '0.8'
 
 import datetime
-import ConfigParser
+import configparser
 import logging
 import math
 import os
@@ -43,7 +41,7 @@ LOG_PATHNAME = os.path.join(LOG_DIRS, 'watchman-subprocess.log')
 IMAGES_PATH = os.path.join(LOG_DIRS, 'images')
 
 
-class WatchmanSubprocess(object):
+class WatchmanSubprocess():
     """Monitors a camera, sending e-mails and saving images when motion is detected.  This
     class runs in its own process because OpenCV does not support device removal.  The work
     around is to kill this process when the camera device disappears.
@@ -52,7 +50,7 @@ class WatchmanSubprocess(object):
     def __init__(self):
 
         print('Loading configuration.')
-        config_parser = ConfigParser.SafeConfigParser()
+        config_parser = configparser.SafeConfigParser()
         config_parser.read('/etc/watchman/watchman.conf')
 
         # Figure out the logging options so that can start before anything else.
@@ -425,7 +423,7 @@ class WatchmanSubprocess(object):
 
         del self.email_frames[:]
 
-        self.logger.info('Sending "%s" e-mail.' % message)
+        self.logger.info('Sending "%s" e-mail.', message)
         email.queue_for_sending()
 
         self.last_email_sent_time = current_frame['time']
