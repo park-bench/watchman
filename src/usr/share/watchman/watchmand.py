@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2020 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -70,18 +70,12 @@ def get_user_and_group_ids():
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
-        message = 'User %s does not exist. %s: %s' % (PROCESS_USERNAME,
-                                                      type(key_error).__name__,
-                                                      str(key_error))
-        print(message)
+        message = 'User %s does not exist.' % PROCESS_USERNAME
         raise InitializationException(message) from key_error
     try:
         program_group = grp.getgrnam(PROCESS_GROUP_NAME)
     except KeyError as key_error:
-        message = 'Group %s does not exist. %s: %s' % (PROCESS_GROUP_NAME,
-                                                       type(key_error).__name__,
-                                                       str(key_error))
-        print(message)
+        message = 'Group %s does not exist.' % PROCESS_GROUP_NAME
         raise InitializationException(message) from key_error
 
     return program_user.pw_uid, program_group.gr_gid
@@ -275,8 +269,8 @@ def main_loop(config):
 
 
 def main():
-    """The container function for the entire script. It loads and verifies configuration,
-    then daemonizes and starts the main loop.
+    """The parent function for the entire program. It loads and verifies configuration,
+    daemonizes, and starts the main program loop.
     """
     os.umask(PROGRAM_UMASK)
     program_uid, program_gid = get_user_and_group_ids()
@@ -297,8 +291,8 @@ def main():
             LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
 
-        # Non-root users cannot create files in /run, so create a directory that can be written
-        #   to. Full access to user only.  drwx------ watchman watchman
+        # Non-root users cannot create files in /run, so create a directory that can be
+        #   written to. Full access to user only.  drwx------ watchman watchman
         create_directory(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid,
                          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
