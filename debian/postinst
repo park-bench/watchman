@@ -48,4 +48,4 @@ case "$1" in
 esac
 
 update-rc.d watchman defaults || exit 1
-invoke-rc.d watchman start || exit 1
+systemctl start watchman || exit 1
