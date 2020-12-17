@@ -38,15 +38,16 @@ watchman depends on two other Parkbench packages, which must be installed first:
 3.  Run `apt install /path/to/package.deb` to install the package. The daemon will attempt to
     start and fail. (This is expected.)
 4.  Copy or rename the example configuration file `/etc/watchman/watchman.conf.example` to
-    `/etc/watchman/watchman.conf`. Make any desired configuration changes.
+    `/etc/watchman/watchman.conf`.
 5.  Change the ownership and permissions of the configuration file:
 ```
 chown root:watchman /etc/watchman/watchman.conf
 chmod u=rw,g=r,o= /etc/watchman/watchman.conf
 ```
-8.  To ease system maintenance, add `watchman` as a supplemental group to administrative
+6.  Make any desired configuration changes to `/etc/watchman/watchman.conf`.
+7.  To ease system maintenance, add `watchman` as a supplemental group to administrative
     users. Doing this will allow these users to view watchman log files.
-9.  Restart the daemon with `systemctl restart watchman`. If the configuration file is valid,
+8.  Restart the daemon with `systemctl restart watchman`. If the configuration file is valid,
     named correctly, and has the correct file permissions, the service will start
     successfully.
 
