@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2023 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,9 +37,6 @@ class WatchmanConfig():
         logger.info('Validating watchman configuration.')
 
         config_helper = confighelper.ConfigHelper()
-
-        # Indicates how detailed the logging should be.
-        self.log_level = config_helper.verify_string_exists(config_parser, 'log_level')
 
         # The number of the video device we want to capture photos with. Corresponds to the
         #   video device number that is in the Linux /dev directory.
@@ -98,6 +95,7 @@ class WatchmanConfig():
         self.image_rotation_angle = config_helper.verify_valid_integer_in_list(
             config_parser, 'image_rotation_angle', (0, 90, 180, 270))
 
+        # The amount of time to wait between saving images locally in seconds.
         self.image_save_throttle_delay = config_helper.verify_number_within_range(
             config_parser, 'image_save_throttle_delay', lower_bound=0)
 

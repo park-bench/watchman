@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright 2015-2020 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2023 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -146,6 +146,10 @@ def verify_safe_file_permissions(program_uid):
     if config_file_stat.st_uid != program_uid:
         raise InitializationException(
             'File %s must be owned by %s.' % (CONFIGURATION_PATHNAME, PROGRAM_NAME))
+    if bool(config_file_stat.st_mode & stat.S_IWGRP):
+        raise InitializationException(
+            "File %s cannot be writable via the group access permission."
+            % CONFIGURATION_PATHNAME)
     if bool(config_file_stat.st_mode & (stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)):
         raise InitializationException(
             "File %s cannot have 'other user' access permissions set."
@@ -241,31 +245,37 @@ def main_loop(config):
 
     # Loop forever.
     while True:
-
-        # Wait for the device to show up.
-        while not glob.glob(selected_device_pathname):
-            time.sleep(.1)
-
-        # Startup the subprocess to that takes photos.
-        logger.info("Detected video device %s. Starting watchman subprocess.",
-                    selected_device_pathname)
-        watchman_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
-
-        # Loop while the device exists and the subprocess is still running.
-        while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
-            time.sleep(.1)
-
-        # Kill the subprocess so it can be restarted.
         try:
-            logger.info('Detected device removal. Killing watchman subprocess.')
-            # TODO: Send a signal to watchman to flush its current e-mail buffer, give it a
-            #   second then do a kill or kill -9. (issue 4)
-            watchman_subprocess.kill()
-        except OSError as os_error:
-            logger.error('Error killing watchman subprocess. %s: %s',
-                         type(os_error).__name__, str(os_error))
-            logger.error('%s', traceback.format_exc())
-            logger.error('Ignoring.')  # The subprocess might no longer exist.
+            # Wait for the device to show up.
+            while not glob.glob(selected_device_pathname):
+                time.sleep(.1)
+
+            # Startup the subprocess to that takes photos.
+            logger.info("Detected video device %s. Starting watchman subprocess.",
+                        selected_device_pathname)
+            watchman_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
+
+            # Loop while the device exists and the subprocess is still running.
+            while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
+                time.sleep(.1)
+
+            # Kill the subprocess so it can be restarted.
+            try:
+                logger.info('Detected device removal. Killing watchman subprocess.')
+                # TODO: Send a signal to watchman to flush its current e-mail buffer, give it
+                #   a second then do a kill or kill -9. (issue 4)
+                watchman_subprocess.kill()
+            except OSError as os_error:
+                logger.error('Error killing watchman subprocess. %s: %s',
+                             type(os_error).__name__, str(os_error))
+                logger.error('%s', traceback.format_exc())
+                logger.error('Ignoring.')  # The subprocess might no longer exist.
+
+        except Exception as exception:  # pylint: disable=broad-except
+            logger.error(
+                'Unexpected error %s: %s\n%s', type(exception).__name__, str(exception),
+                traceback.format_exc())
+            time.sleep(.1)
 
 
 def main():
@@ -306,13 +316,14 @@ def main():
         with daemon_context:
             main_loop(config)
 
-    except Exception as exception:
+    except Exception as exception:  # pylint: disable=broad-except
         logger.critical('Fatal %s: %s\n%s', type(exception).__name__, str(exception),
                         traceback.format_exc())
         if watchman_subprocess is not None:
             logger.critical('Killing watchman subprocess.')
             watchman_subprocess.kill()
         raise exception
+
 
 if __name__ == "__main__":
     main()

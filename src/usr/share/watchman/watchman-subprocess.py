@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2023 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -62,23 +62,28 @@ class WatchmanSubprocess():
         config_helper.configure_logger(LOG_PATHNAME, log_level)
         self.logger = logging.getLogger(__name__)
 
-        self.config = watchmanconfig.WatchmanConfig(config_parser)
+        try:
+            self.config = watchmanconfig.WatchmanConfig(config_parser)
 
-        self.subtractor = self._create_background_subtractor()
-        # TODO: See if there is a better option than to create another background subtractor.
-        #   (issue 6)
-        self.replacement_subtractor = None
-        self.replacement_subtractor_frame_count = 0
-        self.subtractor_motion_start_time = None
+            self.subtractor = self._create_background_subtractor()
+            # TODO: See if there is a better option than to create another background
+            #   subtractor. (issue 6)
+            self.replacement_subtractor = None
+            self.replacement_subtractor_frame_count = 0
+            self.subtractor_motion_start_time = None
 
-        self.email_frames = []
-        self.prior_movements = [None] * self.config.prior_movements_per_threshold
+            self.email_frames = []
+            self.prior_movements = [None] * self.config.prior_movements_per_threshold
 
-        self.first_trigger_motion = None
-        self.first_motion_email_sent = None
-        self.second_motion_email_sent = None
-        self.last_motion_email_sent = None
-        self.last_trigger_motion = None
+            self.first_trigger_motion = None
+            self.first_motion_email_sent = None
+            self.second_motion_email_sent = None
+            self.last_motion_email_sent = None
+            self.last_trigger_motion = None
+        except Exception as exception:  # pylint: disable=broad-except
+            self.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
+                                 str(exception), traceback.format_exc())
+            raise exception
 
     def start_loop(self):
         """The main program loop monitoring a camera."""
@@ -241,7 +246,7 @@ class WatchmanSubprocess():
 
     def _detect_motion(self, frame_count, current_frame):
         """See if there has been enough motion to start sending e-mails or to save an image.
-        Also, ignore the first few frames.  Initiates the sending of the first e-mail and
+        Also, ignore the first few frames. Initiates the sending of the first e-mail and
         marks images to be saved locally.
         """
 
@@ -254,33 +259,35 @@ class WatchmanSubprocess():
 
             # Make sure a specific amount of time has passed since the last local image save.
             #   (E-mail initiated saves do not count.)
-            if (current_frame['time'] - self.last_image_save_time) >= \
+            if (now - self.last_image_save_time) >= \
                     datetime.timedelta(seconds=self.config.image_save_throttle_delay):
 
                 # Mark the image to be saved.
                 self.last_image_save_time = current_frame['time']
                 self._mark_for_saving_and_rotate(current_frame)
 
-            # See if there has been another difference in the last second.
-            prior_movements_iterator = iter(self.prior_movements)
-            prior_movement_time = next(prior_movements_iterator, 'End')
-            if prior_movement_time is not None and prior_movement_time != 'End':
-                time_difference = now - prior_movement_time
-            while prior_movement_time is not None and prior_movement_time != 'End' and \
-                    time_difference.total_seconds() <= self.config.movement_time_threshold:
-                prior_movement_time = next(prior_movements_iterator, 'End')
-                if prior_movement_time is not None and prior_movement_time != 'End':
-                    time_difference = now - prior_movement_time
+            # See if there has been a sufficient amount of differences in the specified
+            #   time frame.
+            motion_detected = False
+            if self.config.prior_movements_per_threshold < 1:
+                motion_detected = True
+            else:
+                oldest_movement_time = \
+                    self.prior_movements[self.config.prior_movements_per_threshold - 1]
+                if oldest_movement_time is not None:
+                    time_difference = now - oldest_movement_time
+                    if time_difference.total_seconds() < \
+                            self.config.movement_time_threshold:
+                        motion_detected = True
 
-            if prior_movement_time == 'End':
+                # Move the array contents down one, discard the oldest and add the new one
+                self.prior_movements = [now] + self.prior_movements[:-1]
+
+            if motion_detected is True:
                 #self.logger.debug('Motion Detected')
                 self.last_trigger_motion = now
                 if self.first_trigger_motion is None:
                     self.first_trigger_motion = now
-
-            # Move the array contents down one, discard the oldest and add the new one
-            if self.prior_movements:
-                self.prior_movements = [now] + self.prior_movements[:-1]
 
     # TODO: This is a work in progress. (issue 12)
     def _processInitialEmails(
@@ -497,7 +504,7 @@ class WatchmanSubprocess():
                 self.subtractor_motion_start_time is None:
             self.subtractor_motion_start_time = self.first_trigger_motion
 
-        # Increment the replacement subtractor frame cound if it has processed frames.
+        # Increment the replacement subtractor frame count if it has processed frames.
         if self.replacement_subtractor is not None:
             self.replacement_subtractor_frame_count += 1
 
@@ -525,8 +532,8 @@ class WatchmanSubprocess():
         # I typically hate one line methods, but it is used in two places and is likely to
         #   change.
 
-        # TODO: Consider switching to Python 3 to use more advanced background subtraction
-        #   algorithms. (issue 8)
+        # TODO: Consider using Python 3's more advanced background subtraction algorithms.
+        #   (issue 8)
         return cv2.bgsegm.createBackgroundSubtractorMOG()
         #return cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
@@ -535,7 +542,7 @@ class WatchmanSubprocess():
 watchman_subprocess = WatchmanSubprocess()
 try:
     watchman_subprocess.start_loop()
-except Exception as exception:
+except Exception as exception:  # pylint: disable=broad-except
     # TODO: This is using an internal object variable. Will probably be solved when we fix
     #   gpgmailer issue 18.
     watchman_subprocess.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,

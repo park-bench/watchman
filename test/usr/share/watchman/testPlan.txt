@@ -1,11 +1,258 @@
-* Start program with camera unplugged.
-* Start program with camera plugged in.
-* Unplugging camera kills subprocess.
-* Plugging camera back in resumes subprocess.
-* Repeatedly unplug and plug back in.
-  * Do it fast to try to screw stuff up.
+* Can build following the instructions.
+* Test the init.d script:
+  * Exit if daemon program is not installed.
+  * Source the /etc/default/watchman file if it exists.
+  * start
+    * starts the program from stop
+    * doesn't restart the program if started.
+  * stop
+    * PID file removed
+  * status prints status
+  * restart
+    * Starts when not running.
+    * restarts when running.
+  * force-reload
+    * Same as restart except doesn't start from stop.
+  * anything else prints usage
+* Following the instructions results in a working application.
+* On install, the watchman group is created if it doesn't exist.
+* On install, the watchman group already exists.
+* On install, the watchman user is created if it doesn't exist.
+  * Has the watchman group.
+* On install, the watchman user already exists.
+  * Has the watchman group.
+* watchman is started following install.
+* watchman is enabled following install.
+* Reinstalling does restart watchman.
+* Reinstalling enables watchman.
+* Verify the config matches the example.
+* Verify the license is installed.
+* Verify changelog is sufficiently updated.
+* Test starting when the watchman user does not exist.
+* Test starting when the watchman group does not exist.
+* Configuration file missing.
+* log_level setting missing.
+* log_level setting empty.
+  * And try uppercase.
+* Log directory gets created if it doesn't exist.
+  * Permissions are correct on /var/log/watchman/watchman.log
+    * Owner and group
+    * Permission bits
+  * Permissions are correct on /var/log/watchman/
+    * Owner and group
+    * Permission bits
+* Log directory already exists.
+  * Permissions are corrected on /var/log/watchman/watchman.log
+    * Owner and group
+    * Permission bits
+  * Permissions are correct on /var/log/watchman/
+    * Owner and group
+    * Permission bits
+* log_level isn't one of trace, debug, info, warn, error, critical
+* log_level is one of trace, debug, info, warn, error, critical
+* Process eoid is watchman after log directory creation.
+* Process egid is watchman after log directory creation.
+* video_device_number fails if it does not exist.
+* video_device_number fails if blank.
+* video_device_number fails if not an integer.
+* video_device_number fails if less than zero.
+* video_device_number succeeds if zero.
+* video_device_number succeeds if greater than zero.
+* initial_frame_skip_count fails if it does not exist.
+* initial_frame_skip_count fails if blank.
+* initial_frame_skip_count fails if not an integer.
+* initial_frame_skip_count fails if less than zero.
+* initial_frame_skip_count succeeds if zero.
+* initial_frame_skip_count succeeds if greater than zero.
+* motion_detection_email_subject fails if it does not exist.
+* motion_detection_email_subject fails if blank.
+* motion_detection_email_subject succeeds if not blank.
+* movement_time_threshold fails if it does not exist.
+* movement_time_threshold fails if blank.
+* movement_time_threshold fails if not an integer.
+* movement_time_threshold fails if less than zero.
+* movement_time_threshold succeeds if zero.
+* movement_time_threshold succeeds if greater than zero.
+* pixel_difference_threshold fails if it does not exist.
+* pixel_difference_threshold fails if blank.
+* pixel_difference_threshold fails if not a number.
+* pixel_difference_threshold fails if less than zero.
+* pixel_difference_threshold succeeds if zero.
+* pixel_difference_threshold succeeds if greater than zero.
+* first_email_image_save_times fails if it does not exist.
+* first_email_image_save_times fails if blank.
+* first_email_image_save_times fails if it does not contain just numbers.
+* first_email_image_save_times succeeds if it contains a single number.
+* first_email_image_save_times succeeds if it contains 3 numbers.
+* first_email_delay fails if it does not exist.
+* first_email_delay fails if blank.
+* first_email_delay fails if not a number.
+* first_email_delay fails if less than zero.
+* first_email_delay succeeds if zero.
+* first_email_delay succeeds if greater than zero.
+* second_email_image_save_times fails if it does not exist.
+* second_email_image_save_times fails if blank.
+* second_email_image_save_times fails if it does not contain just numbers.
+* second_email_image_save_times succeeds if it contains a single number.
+* second_email_image_save_times succeeds if it contains 3 numbers.
+* second_email_delay fails if it does not exist.
+* second_email_delay fails if blank.
+* second_email_delay fails if not a number.
+* second_email_delay fails if less than zero.
+* second_email_delay succeeds if zero.
+* second_email_delay succeeds if greater than zero.
+* third_email_image_save_times fails if it does not exist.
+* third_email_image_save_times fails if blank.
+* third_email_image_save_times fails if it does not contain just numbers.
+* third_email_image_save_times succeeds if it contains a single number.
+* third_email_image_save_times succeeds if it contains 3 numbers.
+* third_email_delay fails if it does not exist.
+* third_email_delay fails if blank.
+* third_email_delay fails if not a number.
+* third_email_delay fails if less than zero.
+* third_email_delay succeeds if zero.
+* third_email_delay succeeds if greater than zero.
+* subsequent_email_image_save_times fails if it does not exist.
+* subsequent_email_image_save_times fails if blank.
+* subsequent_email_image_save_times fails if it does not contain just numbers.
+* subsequent_email_image_save_times succeeds if it contains a single number.
+* subsequent_email_image_save_times succeeds if it contains 3 numbers.
+* subsequent_email_delay fails if it does not exist.
+* subsequent_email_delay fails if blank.
+* subsequent_email_delay fails if not a number.
+* subsequent_email_delay fails if less than zero.
+* subsequent_email_delay succeeds if zero.
+* subsequent_email_delay succeeds if greater than zero.
+* stop_threshold fails if it does not exist.
+* stop_threshold fails if blank.
+* stop_threshold fails if not a number.
+* stop_threshold fails if less than zero.
+* stop_threshold succeeds if zero.
+* stop_threshold succeeds if greater than zero.
+* email_image_width fails if it does not exist.
+* email_image_width fails if blank.
+* email_image_width fails if not an integer.
+* email_image_width fails if less than one.
+* email_image_width succeeds if one.
+* email_image_width succeeds if greater than zero.
+* image_rotation_angle fails if it does not exist.
+* image_rotation_angle fails if blank.
+* image_rotation_angle fails if not an integer.
+* image_rotation_angle fails if not in list..
+* image_rotation_angle succeeds with all 4 values.
+* image_save_throttle_delay fails if it does not exist.
+* image_save_throttle_delay fails if blank.
+* image_save_throttle_delay fails if not a number.
+* image_save_throttle_delay fails if less than zero.
+* image_save_throttle_delay succeeds if zero.
+* image_save_throttle_delay succeeds if greater than zero.
+* still_running_email_subject fails if it does not exist.
+* still_running_email_subject fails if blank.
+* still_running_email_subject succeeds if not blank.
+* still_running_email_max_delay fails if it does not exist.
+* still_running_email_max_delay fails if blank.
+* still_running_email_max_delay fails if not a number.
+* still_running_email_max_delay fails if less than zero.
+* still_running_email_max_delay succeeds if zero.
+* still_running_email_max_delay succeeds if greater than zero.
+* replacement_subtractor_creation_threshold fails if it does not exist.
+* replacement_subtractor_creation_threshold fails if blank.
+* replacement_subtractor_creation_threshold fails if not a number.
+* replacement_subtractor_creation_threshold fails if less than zero.
+* replacement_subtractor_creation_threshold succeeds if zero.
+* replacement_subtractor_creation_threshold succeeds if greater than zero.
+* Exception is raised if file is not owned by watchman.
+* Exception is raised if file has 'group' write permission set.
+* Exception is raised if file has 'other' permissions set.
+  * r
+  * w
+  * x
+* Run directory gets created if it doesn't exist.
+  * Permissions are correct on /run/watchman/watchman.pid
+    * Owner and group are watchman
+    * Permission bits
+  * Permissions are correct on /run/watchman/
+    * Owner and group are watchman
+    * Permission bits
+* Run directory already exists.
+  * Permissions are correct on /run/watchman/watchman.pid
+    * Owner and group are watchman
+    * Permission bits
+  * Permissions are correct on /run/watchman/
+    * Owner and group are watchman
+    * Permission bits are corrected
+* Once permissions are dropped, the egid cannot be changed.
+* Once permissions are dropped, the euid cannot be changed.
+* The program has the correct groups after permissions are dropped.
+* The pid file contains the correct process number.
+* Before daemonize program's umask is set correctly.
+  * Test file creation.
+  * Test directory creation.
+* After daemonize program's umask is set correctly.
+  * Test file creation.
+  * Test directory creation.
+* After daemonize, the program have a blank ouid.
+* Before daemonize, the program should have an suid, euid, and ruid of watchman.
+* After daemonize, the program should have an sgid, egid, and rgid of watchman.
+* systemd considers the service stopped on expected termination.
+* systemd considers the service stopped on unexpected termination.
+* Subprocess is killed on SIGTERM.
+* Subprocess is killed on other exception.
 * Stopping service kills subprocess.
-* Move the subprocess to get into the main loop exception handler.
+* Image directory gets created if it doesn't exist.
+  * Permissions are correct on /var/log/watchman/images
+    * Owner and group
+    * Permission bits
+* Log directory already exists.
+  * Permissions are correct on /var/log/watchman/images
+    * Owner and group
+    * Permission bits are corrected.
+* Subprocess is killed when camera is removed.
+* Errors are logged when subprocess fails to get killed.
+* Subprocess restarts when plugged back in.
+* Program doesn't crash when camera is not plugged in at startup.
+* Program doesn't crash when camera is plugged in at startup.
+* Unexpected exception does not kill the daemon.
+* Subprocess logs appropriate information to its own file.
+* Still running e-mail:
+  * Sent at the appropriate delay.
+  * Content is accurate.
+* When running subprocess interactively, 'q' quits.
+* First e-mail:
+  * Captures images at appropriate times.
+  * Has the right subject.
+  * Has the right content.
+* Second e-mail:
+  * Captures images at appropriate times.
+  * Has the right subject.
+  * Has the right content.
+* Third e-mail:
+  * Captures images at appropriate times.
+  * Has the right subject.
+  * Has the right content.
+* Subsequent e-mails:
+  * Captures images at appropriate times.
+  * Has the right subject.
+  * Has the right content.
+* Subsequent e-mails stop after appropriate delay after motion has stopped.
+* The background subtractor is replaced after an appropriate delay.
+* Test 3 different motion events in one program execution.
+  * Do e-mail validation on each grouping.
+* Quick motion was tested.
+* Continuous motion for several minutes was tested.
+* E-mails are saved to disk in appropriate intervals.
+* _detect_motion appropriately recognizes prior_movements_per_threshold
+* _detect_motion appropriately recognizes movement_time_threshold
+* Images are only resized if they are larger than the desired resolution.
+* Images in e-mails have appropriate filenames.
+* E-mail images are appropriately rotated.
+  * 0
+  * 90
+  * 180
+  * 270
+* Repeatedly unplug and plug back in camera.
+  * Do it fast to try to screw stuff up.
+
 
 * Configuration file is missing.
     - Crash.
