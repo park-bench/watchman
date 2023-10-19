@@ -220,22 +220,27 @@
 * When running subprocess interactively, 'q' quits.
 * First e-mail:
   * Captures images at appropriate times.
+  * E-mail is sent at the right time.
   * Has the right subject.
   * Has the right content.
 * Second e-mail:
   * Captures images at appropriate times.
+  * E-mail is sent at the right time.
   * Has the right subject.
   * Has the right content.
 * Third e-mail:
   * Captures images at appropriate times.
+  * E-mail is sent at the right time.
   * Has the right subject.
   * Has the right content.
 * Subsequent e-mails:
   * Captures images at appropriate times.
+  * E-mail is sent at the right time.
   * Has the right subject.
   * Has the right content.
 * Subsequent e-mails stop after appropriate delay after motion has stopped.
 * The background subtractor is replaced after an appropriate delay.
+  * The third subtractor can replace the second substractor.
 * Test 3 different motion events in one program execution.
   * Do e-mail validation on each grouping.
 * Quick motion was tested.
@@ -250,38 +255,14 @@
   * 90
   * 180
   * 270
+* Disk images are appropriately rotated.
+  * 0
+  * 90
+  * 180
+  * 270
 * Repeatedly unplug and plug back in camera.
   * Do it fast to try to screw stuff up.
-
-
-* Configuration file is missing.
-    - Crash.
-* Remove each required option.
-    - Crash with decent message.
-* Test each option that will not accept blanks.
-    - Crash with decent message.
-* Verify numbers fields only accept numbers.
-    - Crash with decent message.
-* Verify integer fields don't accept floats.
-    - Crash with decent message.
-
-* Frames are captured for the first e-mail and first e-mail is sent.
-* Frames are captured for the second e-mail and second e-mail is sent.
-* Frames are captured for the third e-mail and third e-mail is sent.
-* Frames are captured for subsequent e-mails and subsequent e-mails are sent.
-* E-mails are sent at approximately the right times.
-* Subsequent e-mails keep getting sent as long as motion keeps occurring.
-* E-mails stop when motion stops.
-* Images are saved to disk at the right frequency.
-* Images saved to disk can be opened.
-* Images in e-mails can be opened.
-* Still running notification is sent at approximately the right times.
-* Still running notification's contents is accurate (readable).
-* Background can drastically change and motion is no longer detected (if there is no motion).
+* The replacement substractor fixes the remembered background issue.
+* Verify the initial frame skip count is recognized.
 * Program kinda resets after there hasn't been motion for a long time and everything above works when motion is reintroduced.
 
-* Verify the initial frame skip count is recognized.
-* Try adjusting prior_movements_per_threshold to their minimum values if they are not there already.
-* E-mail image is resized if it is greater than maximum width.
-* Image saved to disk can be rotated 0, 90, 180, 270 degrees.
-* Image e-mailed can be rotated 0, 90, 180, 270 degrees.
