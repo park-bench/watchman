@@ -41,7 +41,7 @@ watchman depends on two other Parkbench packages, which must be installed first:
     `/etc/watchman/watchman.conf`.
 5.  Change the ownership and permissions of the configuration file:
 ```
-chown root:watchman /etc/watchman/watchman.conf
+chown watchman:watchman /etc/watchman/watchman.conf
 chmod u=rw,g=r,o= /etc/watchman/watchman.conf
 ```
 6.  Make any desired configuration changes to `/etc/watchman/watchman.conf`.
