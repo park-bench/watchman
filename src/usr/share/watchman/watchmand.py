@@ -235,49 +235,6 @@ def setup_daemon_context(log_file_handle, program_uid, program_gid):
     return daemon_context
 
 
-def main_loop(config):
-    """The main program loop.
-
-    config: The program configuration object, mostly based on the configuration file.
-    """
-    global watchman_subprocess
-    selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
-
-    # Loop forever.
-    while True:
-        try:
-            # Wait for the device to show up.
-            while not glob.glob(selected_device_pathname):
-                time.sleep(.1)
-
-            # Startup the subprocess to that takes photos.
-            logger.info("Detected video device %s. Starting watchman subprocess.",
-                        selected_device_pathname)
-            watchman_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
-
-            # Loop while the device exists and the subprocess is still running.
-            while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
-                time.sleep(.1)
-
-            # Kill the subprocess so it can be restarted.
-            try:
-                logger.info('Detected device removal. Killing watchman subprocess.')
-                # TODO: Send a signal to watchman to flush its current e-mail buffer, give it
-                #   a second then do a kill or kill -9. (issue 4)
-                watchman_subprocess.kill()
-            except OSError as os_error:
-                logger.error('Error killing watchman subprocess. %s: %s',
-                             type(os_error).__name__, str(os_error))
-                logger.error('%s', traceback.format_exc())
-                logger.error('Ignoring.')  # The subprocess might no longer exist.
-
-        except Exception as exception:  # pylint: disable=broad-except
-            logger.error(
-                'Unexpected error %s: %s\n%s', type(exception).__name__, str(exception),
-                traceback.format_exc())
-            time.sleep(.1)
-
-
 def main():
     """The parent function for the entire program. It loads and verifies configuration,
     daemonizes, and starts the main program loop.
@@ -288,6 +245,7 @@ def main():
     config, config_helper, logger = read_configuration_and_create_logger(
         program_uid, program_gid)
 
+    global watchman_subprocess
     watchman_subprocess = None
     try:
         verify_safe_file_permissions(program_uid)
@@ -323,6 +281,48 @@ def main():
             logger.critical('Killing watchman subprocess.')
             watchman_subprocess.kill()
         raise exception
+
+
+def main_loop(config):
+    """The main program loop.
+
+    config: The program configuration object, mostly based on the configuration file.
+    """
+    selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
+
+    # Loop forever.
+    while True:
+        try:
+            # Wait for the device to show up.
+            while not glob.glob(selected_device_pathname):
+                time.sleep(.1)
+
+            # Startup the subprocess to that takes photos.
+            logger.info("Detected video device %s. Starting watchman subprocess.",
+                        selected_device_pathname)
+            watchman_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
+
+            # Loop while the device exists and the subprocess is still running.
+            while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
+                time.sleep(.1)
+
+            # Kill the subprocess so it can be restarted.
+            try:
+                logger.info('Detected device removal. Killing watchman subprocess.')
+                # TODO: Send a signal to watchman to flush its current e-mail buffer, give it
+                #   a second then do a kill or kill -9. (issue 4)
+                watchman_subprocess.kill()
+            except OSError as os_error:
+                logger.error('Error killing watchman subprocess. %s: %s',
+                             type(os_error).__name__, str(os_error))
+                logger.error('%s', traceback.format_exc())
+                logger.error('Ignoring.')  # The subprocess might no longer exist.
+
+        except Exception as exception:  # pylint: disable=broad-except
+            logger.error(
+                'Unexpected error %s: %s\n%s', type(exception).__name__, str(exception),
+                traceback.format_exc())
+            time.sleep(.1)
 
 
 if __name__ == "__main__":

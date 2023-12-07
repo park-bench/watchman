@@ -210,7 +210,7 @@ class WatchmanSubprocess():
 
                 self._send_still_running_notification(current_frame)
 
-                self._process_replacement_subtractor(last_frame, current_frame)
+                self._process_replacement_subtractor(current_frame)
 
         finally:
             # Clean up.
@@ -489,7 +489,7 @@ class WatchmanSubprocess():
 
     # TODO: This is probably temporary code to quickly get around a bug.  This is why this
     #   code is so self contained. (issue 6)
-    def _process_replacement_subtractor(self, last_frame, current_frame):
+    def _process_replacement_subtractor(self, current_frame):
         """Creates the replacement subtractor and replaces the main subtractor after
         appropriate delays.
         """
@@ -510,12 +510,13 @@ class WatchmanSubprocess():
 
         # See if enough time has passed since first motion detection to create a replacement
         #   background subtractor.
-        if self.first_trigger_motion is not None and self._did_threshold_trigger(
-                self.subtractor_motion_start_time, last_frame, current_frame,
-                self.config.replacement_subtractor_creation_threshold):
-            self.logger.info('Creating replacement background subtractor.')
-            self.replacement_subtractor = self._create_background_subtractor()
-            self.replacement_subtractor_frame_count = 0
+        if self.first_trigger_motion is not None:
+            seconds_of_motion = (
+                current_frame['time'] - self.subtractor_motion_start_time).total_seconds()
+            if seconds_of_motion >= self.config.replacement_subtractor_creation_threshold:
+                self.logger.info('Creating replacement background subtractor.')
+                self.replacement_subtractor = self._create_background_subtractor()
+                self.replacement_subtractor_frame_count = 0
 
         # Collect a certain number of frames before we replace the main subtractor. Use
         #   the same number of frames used to initiate the main subtractor on program start.
