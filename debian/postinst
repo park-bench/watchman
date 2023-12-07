@@ -47,5 +47,5 @@ case "$1" in
     ;;
 esac
 
-update-rc.d watchman defaults || exit 1
+systemctl enable defaults || exit 1
 systemctl restart watchman || exit 1
