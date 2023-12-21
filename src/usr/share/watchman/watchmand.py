@@ -55,6 +55,9 @@ SUBPROCESS_PATHNAME = os.path.join(
 VIDEO_DEVICE_PREFIX = '/dev/video%d'
 PROGRAM_UMASK = 0o027  # -rw-r----- and drwxr-x---
 
+# Use a global variable to track the subprocess. This is needed for sig_term_handler.
+watchman_subprocess = None
+
 
 class InitializationException(Exception):
     """Indicates an expected fatal error occurred during program initialization.
@@ -245,8 +248,6 @@ def main():
     config, config_helper, logger = read_configuration_and_create_logger(
         program_uid, program_gid)
 
-    global watchman_subprocess
-    watchman_subprocess = None
     try:
         verify_safe_file_permissions(program_uid)
 
@@ -288,6 +289,8 @@ def main_loop(config):
 
     config: The program configuration object, mostly based on the configuration file.
     """
+    global watchman_subprocess
+
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
 
     # Loop forever.
