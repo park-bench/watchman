@@ -19,7 +19,7 @@
 * On install, the watchman group already exists.
 * On install, the watchman user is created if it doesn't exist.
   * Has the watchman group.
-* On install, the watchman user already exists.
+* On install, the watchman user already exists without the watchman group.
   * Has the watchman group.
 * watchman is started following install.
 * watchman is enabled following install.
@@ -31,9 +31,6 @@
 * Test starting when the watchman user does not exist.
 * Test starting when the watchman group does not exist.
 * Configuration file missing.
-* log_level setting missing.
-* log_level setting empty.
-  * And try uppercase.
 * Log directory gets created if it doesn't exist.
   * Permissions are correct on /var/log/watchman/watchman.log
     * Owner and group
@@ -48,8 +45,11 @@
   * Permissions are correct on /var/log/watchman/
     * Owner and group
     * Permission bits
+* log_level setting missing.
+* log_level setting empty.
 * log_level isn't one of trace, debug, info, warn, error, critical
 * log_level is one of trace, debug, info, warn, error, critical
+  * And try uppercase.
 * Process eoid is watchman after log directory creation.
 * Process egid is watchman after log directory creation.
 * video_device_number fails if it does not exist.
@@ -69,10 +69,16 @@
 * motion_detection_email_subject succeeds if not blank.
 * movement_time_threshold fails if it does not exist.
 * movement_time_threshold fails if blank.
-* movement_time_threshold fails if not an integer.
+* movement_time_threshold fails if not a number.
 * movement_time_threshold fails if less than zero.
 * movement_time_threshold succeeds if zero.
 * movement_time_threshold succeeds if greater than zero.
+* prior_movements_per_threshold fails if it does not exist.
+* prior_movements_per_threshold fails if blank.
+* prior_movements_per_threshold fails if not an integer.
+* prior_movements_per_threshold fails if less than zero.
+* prior_movements_per_threshold succeeds if zero.
+* prior_movements_per_threshold succeeds if greater than zero.
 * pixel_difference_threshold fails if it does not exist.
 * pixel_difference_threshold fails if blank.
 * pixel_difference_threshold fails if not a number.
@@ -138,7 +144,7 @@
 * image_rotation_angle fails if it does not exist.
 * image_rotation_angle fails if blank.
 * image_rotation_angle fails if not an integer.
-* image_rotation_angle fails if not in list..
+* image_rotation_angle fails if not in list.
 * image_rotation_angle succeeds with all 4 values.
 * image_save_throttle_delay fails if it does not exist.
 * image_save_throttle_delay fails if blank.
@@ -161,9 +167,9 @@
 * replacement_subtractor_creation_threshold fails if less than zero.
 * replacement_subtractor_creation_threshold succeeds if zero.
 * replacement_subtractor_creation_threshold succeeds if greater than zero.
-* Exception is raised if file is not owned by watchman.
-* Exception is raised if file has 'group' write permission set.
-* Exception is raised if file has 'other' permissions set.
+* Exception is raised if configuration file is not owned by watchman.
+* Exception is raised if configuration file has 'group' write permission set.
+* Exception is raised if configuration file has 'other' permissions set.
   * r
   * w
   * x
@@ -183,8 +189,8 @@
     * Permission bits are corrected
 * Once permissions are dropped, the egid cannot be changed.
 * Once permissions are dropped, the euid cannot be changed.
-* The program has the correct groups after permissions are dropped.
-* The pid file contains the correct process number.
+* The program has the correct groups after permissions are dropped. (watchman, gpgmailer, video)
+* The pid file contains the correct process number. (Test without coverage hack.)
 * Before daemonize program's umask is set correctly.
   * Test file creation.
   * Test directory creation.
@@ -192,8 +198,9 @@
   * Test file creation.
   * Test directory creation.
 * After daemonize, the program have a blank ouid.
-* Before daemonize, the program should have an suid, euid, and ruid of watchman.
-* After daemonize, the program should have an sgid, egid, and rgid of watchman.
+* Before daemonize, the program should have an suid, euid, ruid, sgid, egid, rgid of watchman.
+* After daemonize, the program should have an suid, euid, ruid, sgid, egid, rgid of watchman.
+* The subprocess should have an suid, euid, ruid, sgid, egid, rgid of watchman.
 * systemd considers the service stopped on expected termination.
 * systemd considers the service stopped on unexpected termination.
 * Subprocess is killed on SIGTERM.
@@ -203,8 +210,8 @@
   * Permissions are correct on /var/log/watchman/images
     * Owner and group
     * Permission bits
-* Log directory already exists.
-  * Permissions are correct on /var/log/watchman/images
+* Image directory already exists.
+  * Permissions get reset on /var/log/watchman/images
     * Owner and group
     * Permission bits are corrected.
 * Subprocess is killed when camera is removed.
@@ -238,6 +245,7 @@
   * E-mail is sent at the right time.
   * Has the right subject.
   * Has the right content.
+* Can change image counts in all group options.
 * Subsequent e-mails stop after appropriate delay after motion has stopped.
 * The background subtractor is replaced after an appropriate delay.
   * The third subtractor can replace the second substractor.
