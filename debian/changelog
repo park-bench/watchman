@@ -1,4 +1,4 @@
-watchman (0.8) UNRELEASED; urgency=medium
+watchman (0.8) stable; urgency=medium
 
   [ Joel Luellwitz ]
   * Moved to standard Python daemon module.
@@ -7,7 +7,7 @@ watchman (0.8) UNRELEASED; urgency=medium
   [ Emily Frost ]
   * Updated to Python 3.
 
- -- Joel Luellwitz <eviljoel@linux.com>  Mon, 27 Nov 2017 20:37:00 -0600
+ -- Joel Luellwitz <eviljoel@linux.com>  Thu, 13 Jun 2024 14:25:00 -0500
 
 watchman (0.7) stable; urgency=low
 
