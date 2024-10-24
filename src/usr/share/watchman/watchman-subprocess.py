@@ -19,7 +19,7 @@
 # TODO: Consider detecting and sending the most interesting images. (issue 5)
 # TODO: Consider using facial detection. (issue 5)
 
-__all__ = ['WatchmanSubprocess']
+__all__ = ['CammonSubprocess']
 __author__ = 'Joel Luellwitz and Emily Frost'
 __version__ = '0.8'
 
@@ -32,16 +32,16 @@ import random
 import traceback
 from parkbenchcommon import confighelper
 import cv2
+import cammonconfig
 import gpgmailmessage
-import watchmanconfig
 
 # Constants
-LOG_DIRS = '/var/log/watchman'
-LOG_PATHNAME = os.path.join(LOG_DIRS, 'watchman-subprocess.log')
+LOG_DIRS = '/var/log/cammon'
+LOG_PATHNAME = os.path.join(LOG_DIRS, 'cammon-subprocess.log')
 IMAGES_PATH = os.path.join(LOG_DIRS, 'images')
 
 
-class WatchmanSubprocess():
+class CammonSubprocess():
     """Monitors a camera, sending e-mails and saving images when motion is detected.  This
     class runs in its own process because OpenCV does not support device removal.  The work
     around is to kill this process when the camera device disappears.
@@ -51,7 +51,7 @@ class WatchmanSubprocess():
 
         print('Loading configuration.')
         config_parser = configparser.SafeConfigParser()
-        config_parser.read('/etc/watchman/watchman.conf')
+        config_parser.read('/etc/cammon/cammon.conf')
 
         # Figure out the logging options so that can start before anything else.
         print('Verifying configuration.')
@@ -63,7 +63,7 @@ class WatchmanSubprocess():
         self.logger = logging.getLogger(__name__)
 
         try:
-            self.config = watchmanconfig.WatchmanConfig(config_parser)
+            self.config = cammonconfig.CammonConfig(config_parser)
 
             self.subtractor = self._create_background_subtractor()
             # TODO: See if there is a better option than to create another background
@@ -318,7 +318,7 @@ class WatchmanSubprocess():
             email = gpgmailmessage.GpgMailMessage()
             email.set_subject(self.config.still_running_email_subject)
             email.set_body(
-                'Watchman is still running as of %s.' %
+                'Cammon is still running as of %s.' %
                 current_frame['time'].strftime('%Y-%m-%d %H:%M:%S.%f'))
 
             self.logger.info('Sending still running notification e-mail.')
@@ -539,11 +539,11 @@ class WatchmanSubprocess():
 
 
 # TODO: Consider making sure this class owns the process. (issue 9)
-watchman_subprocess = WatchmanSubprocess()
+cammon_subprocess = CammonSubprocess()
 try:
-    watchman_subprocess.start_loop()
+    cammon_subprocess.start_loop()
 except Exception as exception:  # pylint: disable=broad-except
     # TODO: This is using an internal object variable. Will probably be solved when we fix
     #   gpgmailer issue 18.
-    watchman_subprocess.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
+    cammon_subprocess.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
                                         str(exception), traceback.format_exc())

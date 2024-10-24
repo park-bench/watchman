@@ -1,3 +1,10 @@
+cammon (0.9) UNRELEASED; urgency=medium
+
+  * Renamed project to cammon (Camera Monitor) to avoid conflict with Facebook's watchman.
+  * Moved to systemd.
+
+ -- eviljoel <eviljoel@linux.com>  Wed, 23 Oct 2024 20:30:00 -0500
+
 watchman (0.8) stable; urgency=medium
 
   [ Joel Luellwitz ]

@@ -19,33 +19,33 @@ case "$1" in
     configure)
 
     # Default Linux user and group information
-    WATCHMAN_USER='watchman'
-    WATCHMAN_USER_COMMENT='Watchman Daemon'
-    WATCHMAN_GROUP='watchman'
+    CAMMON_USER='cammon'
+    CAMMON_USER_COMMENT='Cammon Daemon'
+    CAMMON_GROUP='cammon'
     GPGMAILER_GROUP='gpgmailer'
     VIDEO_GROUP='video'
 
-    # Add the watchman group
-    if ! getent group "$WATCHMAN_GROUP" >> /dev/null; then
-        echo -n "Adding group $WATCHMAN_GROUP..."
-        addgroup --quiet --system "$WATCHMAN_GROUP" 2> /dev/null
+    # Add the cammon group
+    if ! getent group "$CAMMON_GROUP" >> /dev/null; then
+        echo -n "Adding group $CAMMON_GROUP..."
+        addgroup --quiet --system "$CAMMON_GROUP" 2> /dev/null
         echo "done"
     fi
 
-    # Add the watchman user
-    if ! getent passwd "$WATCHMAN_USER" >> /dev/null; then
-        echo -n "Adding system user $WATCHMAN_USER..."
-        adduser --quiet --system --ingroup "$WATCHMAN_GROUP" --no-create-home --disabled-password \
-            "$WATCHMAN_USER" 2> /dev/null
+    # Add the cammon user
+    if ! getent passwd "$CAMMON_USER" >> /dev/null; then
+        echo -n "Adding system user $CAMMON_USER..."
+        adduser --quiet --system --ingroup "$CAMMON_GROUP" --no-create-home --disabled-password \
+            "$CAMMON_USER" 2> /dev/null
         echo "done"
     fi
 
     # Adjust the user regardless of whether this script created the user or not.
     #   (The user might already exist.)
-    usermod -c "$WATCHMAN_USER_COMMENT" -d "/nonexistent" -g "$WATCHMAN_GROUP" \
-        -G "$GPGMAILER_GROUP","$VIDEO_GROUP" "$WATCHMAN_USER"
+    usermod -c "$CAMMON_USER_COMMENT" -d "/nonexistent" -g "$CAMMON_GROUP" \
+        -G "$GPGMAILER_GROUP","$VIDEO_GROUP" "$CAMMON_USER"
     ;;
 esac
 
-systemctl enable watchman || exit 1
-systemctl restart watchman || exit 1
+systemctl enable cammon || exit 1
+systemctl restart cammon || exit 1

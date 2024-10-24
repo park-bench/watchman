@@ -1,11 +1,12 @@
+debian/cammon.debhelper.log
+debian/cammon/*
+debian/cammon.substvars
+debian/.debhelper
 debian/debhelper-build-stamp
 debian/debhelper.log
 debian/files
 debian/tmp
-debian/watchman.debhelper.log
-debian/watchman/*
-debian/watchman.substvars
-src/etc/opt/watchman/watchman.conf
+src/etc/opt/cammon/cammon.conf
 *.pyc
 .idea/
 *.iml

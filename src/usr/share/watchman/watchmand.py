@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright 2015-2023 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2024 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,11 +36,11 @@ import traceback
 import configparser
 import daemon
 from lockfile import pidlockfile
+import cammonconfig
 from parkbenchcommon import confighelper
-import watchmanconfig
 
 # Constants
-PROGRAM_NAME = 'watchman'
+PROGRAM_NAME = 'cammon'
 CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_NAME)
 SYSTEM_PID_DIR = '/run'
 PROGRAM_PID_DIRS = PROGRAM_NAME
@@ -56,7 +56,7 @@ VIDEO_DEVICE_PREFIX = '/dev/video%d'
 PROGRAM_UMASK = 0o027  # -rw-r----- and drwxr-x---
 
 # Use a global variable to track the subprocess. This is needed for sig_term_handler.
-watchman_subprocess = None
+cammon_subprocess = None
 
 
 class InitializationException(Exception):
@@ -108,7 +108,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     # TODO: Eventually add a verify_string_list method. (gpgmailer issue 20)
     config['log_level'] = config_helper.verify_string_exists(config_file, 'log_level')
 
-    # Create logging directory.  drwxr-x--- watchman watchman
+    # Create logging directory.  drwxr-x--- cammon cammon
     log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP
     # TODO: Look into defaulting the logging to the console until the program gets more
     #   bootstrapped. (gpgmailer issue 18)
@@ -130,7 +130,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     logger.info('Verifying non-logging configuration.')
 
     # Parse the configuration file. The parsed result is returned as an object.
-    config = watchmanconfig.WatchmanConfig(config_file)
+    config = cammonconfig.CammonConfig(config_file)
 
     return config, config_helper, logger
 
@@ -142,8 +142,8 @@ def verify_safe_file_permissions(program_uid):
 
     program_uid: The system user ID that should own the configuration file.
     """
-    # Unlike other Parkbench programs, the configuration file should be owned by 'watchman'
-    #   because the subprocess (running as watchman) needs to be able to read the
+    # Unlike other Parkbench programs, the configuration file should be owned by 'cammon'
+    #   because the subprocess (running as cammon) needs to be able to read the
     #   configuration file.
     config_file_stat = os.stat(CONFIGURATION_PATHNAME)
     if config_file_stat.st_uid != program_uid:
@@ -203,9 +203,9 @@ def sig_term_handler(signal, stack_frame):
     stack_frame: Represents the stack frame.
     """
     logger.info('SIGTERM received. Quitting.')
-    if watchman_subprocess is not None:
-        logger.info('Killing watchman subprocess.')
-        watchman_subprocess.kill()
+    if cammon_subprocess is not None:
+        logger.info('Killing cammon subprocess.')
+        cammon_subprocess.kill()
     sys.exit(0)
 
 
@@ -231,7 +231,7 @@ def setup_daemon_context(log_file_handle, program_uid, program_gid):
 
     daemon_context.files_preserve = [log_file_handle]
 
-    # Set the UID and GID to 'watchman' user and group.
+    # Set the UID and GID to 'cammon' user and group.
     daemon_context.uid = program_uid
     daemon_context.gid = program_gid
 
@@ -255,13 +255,13 @@ def main():
         os.seteuid(os.getuid())
         os.setegid(os.getgid())
 
-        # drwxr-x--- watchman watchman
+        # drwxr-x--- cammon cammon
         create_directory(
             LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
 
         # Non-root users cannot create files in /run, so create a directory that can be
-        #   written to. Full access to user only.  drwx------ watchman watchman
+        #   written to. Full access to user only.  drwx------ cammon cammon
         create_directory(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid,
                          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
@@ -278,9 +278,9 @@ def main():
     except Exception as exception:  # pylint: disable=broad-except
         logger.critical('Fatal %s: %s\n%s', type(exception).__name__, str(exception),
                         traceback.format_exc())
-        if watchman_subprocess is not None:
-            logger.critical('Killing watchman subprocess.')
-            watchman_subprocess.kill()
+        if cammon_subprocess is not None:
+            logger.critical('Killing cammon subprocess.')
+            cammon_subprocess.kill()
         raise exception
 
 
@@ -289,7 +289,7 @@ def main_loop(config):
 
     config: The program configuration object, mostly based on the configuration file.
     """
-    global watchman_subprocess
+    global cammon_subprocess
 
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
 
@@ -301,22 +301,22 @@ def main_loop(config):
                 time.sleep(.1)
 
             # Startup the subprocess to that takes photos.
-            logger.info("Detected video device %s. Starting watchman subprocess.",
+            logger.info("Detected video device %s. Starting cammon subprocess.",
                         selected_device_pathname)
-            watchman_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
+            cammon_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
 
             # Loop while the device exists and the subprocess is still running.
-            while glob.glob(selected_device_pathname) and watchman_subprocess.poll() is None:
+            while glob.glob(selected_device_pathname) and cammon_subprocess.poll() is None:
                 time.sleep(.1)
 
             # Kill the subprocess so it can be restarted.
             try:
-                logger.info('Detected device removal. Killing watchman subprocess.')
-                # TODO: Send a signal to watchman to flush its current e-mail buffer, give it
-                #   a second then do a kill or kill -9. (issue 4)
-                watchman_subprocess.kill()
+                logger.info('Detected device removal. Killing cammon subprocess.')
+                # TODO: Send a signal to cammon to flush its current e-mail buffer, give it a
+                #   second then do a kill or kill -9. (issue 4)
+                cammon_subprocess.kill()
             except OSError as os_error:
-                logger.error('Error killing watchman subprocess. %s: %s',
+                logger.error('Error killing cammon subprocess. %s: %s',
                              type(os_error).__name__, str(os_error))
                 logger.error('%s', traceback.format_exc())
                 logger.error('Ignoring.')  # The subprocess might no longer exist.

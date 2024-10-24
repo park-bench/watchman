@@ -1,11 +1,11 @@
-Source: watchman
+Source: cammon
 Section: parkbench
 Priority: required
 Maintainer: eviljoel, Emily Frost
 Build-Depends: debhelper
 Standards-Version: 3.9.6.1
 
-Package: watchman
+Package: cammon
 Architecture: all
 Depends: gpgmailer (>=0.8), parkbench-common (>=0.8), python3-daemon, python3-opencv
 Description: Monitors for motion and sends encrypted e-mails upon detection.

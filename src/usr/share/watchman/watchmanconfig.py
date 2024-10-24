@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-__all__ = ['WatchmanConfig']
+__all__ = ['CammonConfig']
 __author__ = 'Joel Luellwitz and Emily Frost'
 __version__ = '0.8'
 
@@ -21,20 +21,19 @@ import logging
 from parkbenchcommon import confighelper
 
 
-class WatchmanConfig():
-    """Loads the configuration for the 'watchman' program.  An instance of this object
-    contains all the configuration values.
+class CammonConfig():
+    """Loads the configuration for the 'cammon' program.  An instance of this object contains
+    all the configuration values.
     """
 
     def __init__(self, config_parser):
-        """Reads the watchman configuration file and throws an exception if there is an
-        error.
+        """Reads the cammon configuration file and throws an exception if there is an error.
 
         config_parser: The ConfigParser instance the configuration is read from.
         """
         logger = logging.getLogger()
 
-        logger.info('Validating watchman configuration.')
+        logger.info('Validating cammon configuration.')
 
         config_helper = confighelper.ConfigHelper()
 

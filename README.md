@@ -1,9 +1,9 @@
-# watchman
+# cammon
 
-_watchman_ monitors a camera for motion and sends encrypted e-mails containing images of the
+_cammon_ monitors a camera for motion and sends encrypted e-mails containing images of the
 area being monitored as long as motion is detected.
 
-watchman is licensed under the GNU GPLv3. All source code commits prior to the public release
+cammon is licensed under the GNU GPLv3. All source code commits prior to the public release
 are also retroactively licensed under the GNU GPLv3.
 
 This software is still in _beta_ and may not be ready for use in a production environment.
@@ -25,7 +25,7 @@ installing a Debian package. The rest of these instructions make the following a
 
 ## Parkbench Dependencies
 
-watchman depends on two other Parkbench packages, which must be installed first:
+cammon depends on two other Parkbench packages, which must be installed first:
 
 *   [parkbench-common](https://github.com/park-bench/parkbench-common)
 *   [gpgmailer](https://github.com/park-bench/gpgmailer)
@@ -37,17 +37,17 @@ watchman depends on two other Parkbench packages, which must be installed first:
 2.  Run `debuild` in the project root directory to build the package.
 3.  Run `apt install /path/to/package.deb` to install the package. The daemon will attempt to
     start and fail. (This is expected.)
-4.  Copy or rename the example configuration file `/etc/watchman/watchman.conf.example` to
-    `/etc/watchman/watchman.conf`.
+4.  Copy or rename the example configuration file `/etc/cammon/cammon.conf.example` to
+    `/etc/cammon/cammon.conf`.
 5.  Change the ownership and permissions of the configuration file:
 ```
-chown watchman:watchman /etc/watchman/watchman.conf
-chmod u=rw,g=r,o= /etc/watchman/watchman.conf
+chown cammon:cammon /etc/cammon/cammon.conf
+chmod u=rw,g=r,o= /etc/cammon/cammon.conf
 ```
-6.  Make any desired configuration changes to `/etc/watchman/watchman.conf`.
-7.  To ease system maintenance, add `watchman` as a supplemental group to administrative
-    users. Doing this will allow these users to view watchman log files.
-8.  Restart the daemon with `systemctl restart watchman`. If the configuration file is valid,
+6.  Make any desired configuration changes to `/etc/cammon/cammon.conf`.
+7.  To ease system maintenance, add `cammon` as a supplemental group to administrative users.
+    Doing this will allow these users to view cammon log files.
+8.  Restart the daemon with `systemctl restart cammon`. If the configuration file is valid,
     named correctly, and has the correct file permissions, the service will start
     successfully.
 

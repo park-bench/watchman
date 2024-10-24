@@ -1,4 +1,4 @@
-# Config file for Watchman.
+# Config file for Cammon.
 
 [General]
 
@@ -72,7 +72,7 @@ stop_threshold=30
 #   This helps us not fill up the disk.
 image_save_throttle_delay=1
 
-# Subject for e-mail letting us know that watchman is still running. This should probably be something
+# Subject for e-mail letting us know that cammon is still running. This should probably be something
 #   vague.
 still_running_email_subject=Encrypted message from your server.
 

@@ -1,7 +1,7 @@
 * Can build following the instructions.
 * Test the init.d script:
   * Exit if daemon program is not installed.
-  * Source the /etc/default/watchman file if it exists.
+  * Source the /etc/default/cammon file if it exists.
   * start
     * starts the program from stop
     * doesn't restart the program if started.
@@ -15,34 +15,34 @@
     * Same as restart except doesn't start from stop.
   * anything else prints usage
 * Following the instructions results in a working application.
-* On install, the watchman group is created if it doesn't exist.
-* On install, the watchman group already exists.
-* On install, the watchman user is created if it doesn't exist.
-  * Has the watchman group.
-* On install, the watchman user already exists without the watchman group.
-  * Has the watchman group.
-* watchman is started following install.
-* watchman is enabled following install.
-* Reinstalling does restart watchman.
-* Reinstalling enables watchman.
+* On install, the cammon group is created if it doesn't exist.
+* On install, the cammon group already exists.
+* On install, the cammon user is created if it doesn't exist.
+  * Has the cammon group.
+* On install, the cammon user already exists without the cammon group.
+  * Has the cammon group.
+* cammon is started following install.
+* cammon is enabled following install.
+* Reinstalling does restart cammon.
+* Reinstalling enables cammon.
 * Verify the config matches the example.
 * Verify the license is installed.
 * Verify changelog is sufficiently updated.
-* Test starting when the watchman user does not exist.
-* Test starting when the watchman group does not exist.
+* Test starting when the cammon user does not exist.
+* Test starting when the cammon group does not exist.
 * Configuration file missing.
 * Log directory gets created if it doesn't exist.
-  * Permissions are correct on /var/log/watchman/watchman.log
+  * Permissions are correct on /var/log/cammon/cammon.log
     * Owner and group
     * Permission bits
-  * Permissions are correct on /var/log/watchman/
+  * Permissions are correct on /var/log/cammon/
     * Owner and group
     * Permission bits
 * Log directory already exists.
-  * Permissions are corrected on /var/log/watchman/watchman.log
+  * Permissions are corrected on /var/log/cammon/cammon.log
     * Owner and group
     * Permission bits
-  * Permissions are correct on /var/log/watchman/
+  * Permissions are correct on /var/log/cammon/
     * Owner and group
     * Permission bits
 * log_level setting missing.
@@ -50,8 +50,8 @@
 * log_level isn't one of trace, debug, info, warn, error, critical
 * log_level is one of trace, debug, info, warn, error, critical
   * And try uppercase.
-* Process eoid is watchman after log directory creation.
-* Process egid is watchman after log directory creation.
+* Process eoid is cammon after log directory creation.
+* Process egid is cammon after log directory creation.
 * video_device_number fails if it does not exist.
 * video_device_number fails if blank.
 * video_device_number fails if not an integer.
@@ -167,29 +167,29 @@
 * replacement_subtractor_creation_threshold fails if less than zero.
 * replacement_subtractor_creation_threshold succeeds if zero.
 * replacement_subtractor_creation_threshold succeeds if greater than zero.
-* Exception is raised if configuration file is not owned by watchman.
+* Exception is raised if configuration file is not owned by cammon.
 * Exception is raised if configuration file has 'group' write permission set.
 * Exception is raised if configuration file has 'other' permissions set.
   * r
   * w
   * x
 * Run directory gets created if it doesn't exist.
-  * Permissions are correct on /run/watchman/watchman.pid
-    * Owner and group are watchman
+  * Permissions are correct on /run/cammon/cammon.pid
+    * Owner and group are cammon
     * Permission bits
-  * Permissions are correct on /run/watchman/
-    * Owner and group are watchman
+  * Permissions are correct on /run/cammon/
+    * Owner and group are cammon
     * Permission bits
 * Run directory already exists.
-  * Permissions are correct on /run/watchman/watchman.pid
-    * Owner and group are watchman
+  * Permissions are correct on /run/cammon/cammon.pid
+    * Owner and group are cammon
     * Permission bits
-  * Permissions are correct on /run/watchman/
-    * Owner and group are watchman
+  * Permissions are correct on /run/cammon/
+    * Owner and group are cammon
     * Permission bits are corrected
 * Once permissions are dropped, the egid cannot be changed.
 * Once permissions are dropped, the euid cannot be changed.
-* The program has the correct groups after permissions are dropped. (watchman, gpgmailer, video)
+* The program has the correct groups after permissions are dropped. (cammon, gpgmailer, video)
 * The pid file contains the correct process number. (Test without coverage hack.)
 * Before daemonize program's umask is set correctly.
   * Test file creation.
@@ -198,20 +198,20 @@
   * Test file creation.
   * Test directory creation.
 * After daemonize, the program have a blank ouid.
-* Before daemonize, the program should have an suid, euid, ruid, sgid, egid, rgid of watchman.
-* After daemonize, the program should have an suid, euid, ruid, sgid, egid, rgid of watchman.
-* The subprocess should have an suid, euid, ruid, sgid, egid, rgid of watchman.
+* Before daemonize, the program should have an suid, euid, ruid, sgid, egid, rgid of cammon.
+* After daemonize, the program should have an suid, euid, ruid, sgid, egid, rgid of cammon.
+* The subprocess should have an suid, euid, ruid, sgid, egid, rgid of cammon.
 * systemd considers the service stopped on expected termination.
 * systemd considers the service stopped on unexpected termination.
 * Subprocess is killed on SIGTERM.
 * Subprocess is killed on other exception.
 * Stopping service kills subprocess.
 * Image directory gets created if it doesn't exist.
-  * Permissions are correct on /var/log/watchman/images
+  * Permissions are correct on /var/log/cammon/images
     * Owner and group
     * Permission bits
 * Image directory already exists.
-  * Permissions get reset on /var/log/watchman/images
+  * Permissions get reset on /var/log/cammon/images
     * Owner and group
     * Permission bits are corrected.
 * Subprocess is killed when camera is removed.

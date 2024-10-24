@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Copyright 2015-2019 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2024 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,13 +16,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ### BEGIN INIT INFO
-# Provides:          watchman
+# Provides:          cammon
 # Required-Start:    $remote_fs $syslog gpgmailer
 # Required-Stop:     $remote_fs $syslog gpgmailer
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Watchman
-# Description:       Init script for watchman. Monitors for motion and sends encrypted e-mails upon detection.
+# Short-Description: Cammon
+# Description:       Init script for cammon. Monitors for motion and sends encrypted e-mails upon detection.
 ### END INIT INFO
 
 # Author: Joel Luellwitz <eviljoel@linux.com>
@@ -31,8 +31,8 @@
 # Do NOT "set -e"
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
-DESC="Watchman"
-NAME=watchman
+DESC="Cammon"
+NAME=cammon
 PROCESS_NAME=${NAME}d.py
 DAEMON=/usr/share/$NAME/${NAME}d.py
 DAEMON_ARGS=
