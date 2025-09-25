@@ -63,6 +63,7 @@ SetLoginEnvironment=false
 NoNewPrivileges=true
 SecureBits=keep-caps-locked no-setuid-fixup no-setuid-fixup-locked noroot noroot-locked
 UMask=0027
+KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
