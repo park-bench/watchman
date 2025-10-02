@@ -44,7 +44,7 @@ SystemCallFilter=@system-service
 # TODO: Other programs should use @signal
 StandardOutput=journal
 StandardError=journal
-# TODO: Consider LogNamespace=parkbench for potential log issolation.
+LogNamespace=parkbench
 # TODO: For gpgmailer, consider using LoadCredentialEncrypted=ID[:PATH]
 
 [Service]
@@ -63,7 +63,9 @@ SetLoginEnvironment=false
 NoNewPrivileges=true
 SecureBits=keep-caps-locked no-setuid-fixup no-setuid-fixup-locked noroot noroot-locked
 UMask=0027
+WorkingDirectory=/
 KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
+SystemCallErrorNumber=EPERM

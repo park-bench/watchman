@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright 2015-2024 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2025 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 # TODO: Eventually consider running in a chroot or jail. (gpgmailer issue 17)
 
 __author__ = 'Joel Luellwitz and Emily Frost'
-__version__ = '0.8'
+__version__ = '0.9'
 
 import glob
 import grp
@@ -34,26 +34,26 @@ import sys
 import time
 import traceback
 import configparser
-import daemon
-from lockfile import pidlockfile
+import daemon  # TODO: Not needed with systemd.
+from lockfile import pidlockfile  # TODO: Not needed with systemd.
 import cammonconfig
 from parkbenchcommon import confighelper
 
 # Constants
 PROGRAM_NAME = 'cammon'
 CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_NAME)
-SYSTEM_PID_DIR = '/run'
-PROGRAM_PID_DIRS = PROGRAM_NAME
-PID_FILE = '%s.pid' % PROGRAM_NAME
+SYSTEM_PID_DIR = '/run'  # TODO: Not needed with systemd.
+PROGRAM_PID_DIRS = PROGRAM_NAME  # TODO: Not needed with systemd.
+PID_FILE = '%s.pid' % PROGRAM_NAME  # TODO: Not needed with systemd.
 LOG_DIR = os.path.join('/var/log', PROGRAM_NAME)
 IMAGE_DIRS = 'images'
-LOG_FILE = '%s.log' % PROGRAM_NAME
+LOG_FILE = '%s.log' % PROGRAM_NAME  # TODO: Not needed with systemd.
 PROCESS_USERNAME = PROGRAM_NAME
 PROCESS_GROUP_NAME = PROGRAM_NAME
 SUBPROCESS_PATHNAME = os.path.join(
     '/usr/share', PROGRAM_NAME, '%s-subprocess.py' % PROGRAM_NAME)
 VIDEO_DEVICE_PREFIX = '/dev/video%d'
-PROGRAM_UMASK = 0o027  # -rw-r----- and drwxr-x---
+PROGRAM_UMASK = 0o027  # -rw-r----- and drwxr-x---  # TODO: Not needed with systemd.
 
 # Use a global variable to track the subprocess. This is needed for sig_term_handler.
 cammon_subprocess = None
@@ -109,7 +109,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     config['log_level'] = config_helper.verify_string_exists(config_file, 'log_level')
 
     # Create logging directory.  drwxr-x--- cammon cammon
-    log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP
+    log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP  # TODO: Break out into method to create image directory.
     # TODO: Look into defaulting the logging to the console until the program gets more
     #   bootstrapped. (gpgmailer issue 18)
     print('Creating logging directory %s.' % LOG_DIR)
@@ -123,7 +123,7 @@ def read_configuration_and_create_logger(program_uid, program_gid):
     print('Configuring logger.')
     os.setegid(program_gid)
     os.seteuid(program_uid)
-    config_helper.configure_logger(os.path.join(LOG_DIR, LOG_FILE), config['log_level'])
+    config_helper.configure_logger(os.path.join(LOG_DIR, LOG_FILE), config['log_level'])  # TODO: Split out into own method.
 
     logger = logging.getLogger(__name__)
 
@@ -202,9 +202,9 @@ def sig_term_handler(signal, stack_frame):
     signal: Object representing the signal thrown.
     stack_frame: Represents the stack frame.
     """
-    logger.info('SIGTERM received. Quitting.')
+    logger.info('SIGTERM received. Quitting.')  # TODO: Is this thread safe?
     if cammon_subprocess is not None:
-        logger.info('Killing cammon subprocess.')
+        logger.info('Killing cammon subprocess.')  # TODO: Is this thread safe?
         cammon_subprocess.kill()
     sys.exit(0)
 
@@ -219,21 +219,22 @@ def setup_daemon_context(log_file_handle, program_uid, program_gid):
     Returns the daemon context.
     """
     daemon_context = daemon.DaemonContext(
-        working_directory='/',
+        working_directory='/',  # TODO: Handled by systemd.
         pidfile=pidlockfile.PIDLockFile(
-            os.path.join(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, PID_FILE)),
-        umask=PROGRAM_UMASK,
+            os.path.join(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, PID_FILE)), # TODO: Not needed for 'notify' services.
+        umask=PROGRAM_UMASK,  # TODO: Handled by systemd.
     )
 
+    # TODO: Need to replace the signal handler setup.
     daemon_context.signal_map = {
         signal.SIGTERM: sig_term_handler,
     }
 
-    daemon_context.files_preserve = [log_file_handle]
+    daemon_context.files_preserve = [log_file_handle]  # TODO: Using the system journal instead with 'parkbench' journal namespace.
 
     # Set the UID and GID to 'cammon' user and group.
-    daemon_context.uid = program_uid
-    daemon_context.gid = program_gid
+    daemon_context.uid = program_uid  # TODO: Handled by systemd.
+    daemon_context.gid = program_gid  # TODO: Handled by systemd.
 
     return daemon_context
 
@@ -262,17 +263,17 @@ def main():
 
         # Non-root users cannot create files in /run, so create a directory that can be
         #   written to. Full access to user only.  drwx------ cammon cammon
-        create_directory(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid,
+        create_directory(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid, # TODO: Not needed with systemd.
                          stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
         # Configuration has been read and directories setup. Now drop permissions forever.
-        drop_permissions_forever(program_uid, program_gid)
+        drop_permissions_forever(program_uid, program_gid)  # TODO: Not needed with systemd.
 
         daemon_context = setup_daemon_context(
-            config_helper.get_log_file_handle(), program_uid, program_gid)
+            config_helper.get_log_file_handle(), program_uid, program_gid)  # TODO: Except for the signal handler, not needed with systemd.
 
         logger.info('Daemonizing...')
-        with daemon_context:
+        with daemon_context:  # TODO: Daemon context is not needed with systemd.
             main_loop(config)
 
     except Exception as exception:  # pylint: disable=broad-except
@@ -292,6 +293,8 @@ def main_loop(config):
     global cammon_subprocess
 
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
+
+    # TODO: Call sd_notify here.
 
     # Loop forever.
     while True:
