@@ -1,4 +1,4 @@
-# Copyright 2015-2023 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2025 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +15,9 @@
 
 __all__ = ['CammonConfig']
 __author__ = 'Joel Luellwitz and Emily Frost'
-__version__ = '0.8'
+__version__ = '0.9'
 
+import configparser
 import logging
 from parkbenchcommon import confighelper
 
@@ -26,16 +27,22 @@ class CammonConfig():
     all the configuration values.
     """
 
-    def __init__(self, config_parser):
+    def __init__(self):
         """Reads the cammon configuration file and throws an exception if there is an error.
-
-        config_parser: The ConfigParser instance the configuration is read from.
         """
         logger = logging.getLogger()
+
+        config_pathname = '/etc/cammon/cammon.conf'
+        logger.info('Reading %s...' % config_pathname)
+        config_parser = configparser.SafeConfigParser()
+        config_parser.read(config_pathname)
 
         logger.info('Validating cammon configuration.')
 
         config_helper = confighelper.ConfigHelper()
+
+        # TODO: Eventually add a verify_string_list method. (gpgmailer issue 20)
+        self.log_level = config_helper.verify_string_exists(config_parser, 'log_level')
 
         # The number of the video device we want to capture photos with. Corresponds to the
         #   video device number that is in the Linux /dev directory.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2015-2023 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2025 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,9 @@
 
 __all__ = ['CammonSubprocess']
 __author__ = 'Joel Luellwitz and Emily Frost'
-__version__ = '0.8'
+__version__ = '0.9'
 
 import datetime
-import configparser
 import logging
 import math
 import os
@@ -35,11 +34,6 @@ import cv2
 import cammonconfig
 import gpgmailmessage
 
-# Constants
-LOG_DIRS = '/var/log/cammon'
-LOG_PATHNAME = os.path.join(LOG_DIRS, 'cammon-subprocess.log')
-IMAGES_PATH = os.path.join(LOG_DIRS, 'images')
-
 
 class CammonSubprocess():
     """Monitors a camera, sending e-mails and saving images when motion is detected.  This
@@ -47,23 +41,15 @@ class CammonSubprocess():
     around is to kill this process when the camera device disappears.
     """
 
-    def __init__(self):
+    def start(self):
 
-        print('Loading configuration.')
-        config_parser = configparser.SafeConfigParser()
-        config_parser.read('/etc/cammon/cammon.conf')
-
-        # Figure out the logging options so that can start before anything else.
-        print('Verifying configuration.')
-        config_helper = confighelper.ConfigHelper()
-
-        log_level = config_helper.verify_string_exists(config_parser, 'log_level')
-
-        config_helper.configure_logger(LOG_PATHNAME, log_level)
+        confighelper.configure_logger()
         self.logger = logging.getLogger(__name__)
 
         try:
-            self.config = cammonconfig.CammonConfig(config_parser)
+            self.config = cammonconfig.CammonConfig()
+
+            self.logger.setLevel(self.config.log_level)
 
             self.subtractor = self._create_background_subtractor()
             # TODO: See if there is a better option than to create another background
@@ -80,6 +66,8 @@ class CammonSubprocess():
             self.second_motion_email_sent = None
             self.last_motion_email_sent = None
             self.last_trigger_motion = None
+
+            self.start_loop()
         except Exception as exception:  # pylint: disable=broad-except
             self.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
                                  str(exception), traceback.format_exc())
@@ -204,7 +192,7 @@ class CammonSubprocess():
                 if current_frame['save'] is True:
 
                     pathname = os.path.join(
-                        IMAGES_PATH,
+                        '/var/log/cammon/images',
                         current_frame['time'].strftime('%Y-%m-%d_%H-%M-%S_%f.jpg'))
                     cv2.imwrite(pathname, current_frame['rotated_image'])
 
@@ -538,12 +526,6 @@ class CammonSubprocess():
         #return cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
 
 
-# TODO: Consider making sure this class owns the process. (issue 9)
-cammon_subprocess = CammonSubprocess()
-try:
-    cammon_subprocess.start_loop()
-except Exception as exception:  # pylint: disable=broad-except
-    # TODO: This is using an internal object variable. Will probably be solved when we fix
-    #   gpgmailer issue 18.
-    cammon_subprocess.logger.critical('Fatal %s: %s\n%s', type(exception).__name__,
-                                        str(exception), traceback.format_exc())
+if __name__ == '__main__':
+    # TODO: Consider making sure this class owns the process. (issue 9)
+    cammon_subprocess = CammonSubprocess().start()

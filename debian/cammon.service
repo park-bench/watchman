@@ -48,21 +48,22 @@ LogNamespace=parkbench
 # TODO: For gpgmailer, consider using LoadCredentialEncrypted=ID[:PATH]
 
 [Service]
+UMask=0027
+User=cammon
+Group=cammon
 Type=notify
 Restart=always
 WatchdogSec=1
 TimeoutStopSec=1
+ExecStartPre=+/usr/share/cammon/cammon_start_pre.sh
 # TODO: Should we even have a cammond.py file?
 ExecStart=/usr/share/cammon/cammond.py
 OOMPolicy=continue
 OpenFile=/etc/cammon/cammon.conf:config:read-only
-User=cammon
-Group=cammon
 SupplementaryGroups=video gpgmailer
 SetLoginEnvironment=false
 NoNewPrivileges=true
 SecureBits=keep-caps-locked no-setuid-fixup no-setuid-fixup-locked noroot noroot-locked
-UMask=0027
 WorkingDirectory=/
 KillMode=mixed
 

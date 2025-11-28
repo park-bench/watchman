@@ -23,40 +23,29 @@ __author__ = 'Joel Luellwitz and Emily Frost'
 __version__ = '0.9'
 
 import glob
-import grp
 import logging
 import os
 import pwd
 import signal
 import stat
 import subprocess
-import sys
 import time
 import traceback
-import configparser
-import daemon  # TODO: Not needed with systemd.
-from lockfile import pidlockfile  # TODO: Not needed with systemd.
+import threading
 import cammonconfig
 from parkbenchcommon import confighelper
 
 # Constants
 PROGRAM_NAME = 'cammon'
 CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_NAME)
-SYSTEM_PID_DIR = '/run'  # TODO: Not needed with systemd.
-PROGRAM_PID_DIRS = PROGRAM_NAME  # TODO: Not needed with systemd.
-PID_FILE = '%s.pid' % PROGRAM_NAME  # TODO: Not needed with systemd.
-LOG_DIR = os.path.join('/var/log', PROGRAM_NAME)
-IMAGE_DIRS = 'images'
-LOG_FILE = '%s.log' % PROGRAM_NAME  # TODO: Not needed with systemd.
+IMAGE_DIR = os.path.join('/var/log', PROGRAM_NAME, 'images')
 PROCESS_USERNAME = PROGRAM_NAME
 PROCESS_GROUP_NAME = PROGRAM_NAME
 SUBPROCESS_PATHNAME = os.path.join(
     '/usr/share', PROGRAM_NAME, '%s-subprocess.py' % PROGRAM_NAME)
 VIDEO_DEVICE_PREFIX = '/dev/video%d'
-PROGRAM_UMASK = 0o027  # -rw-r----- and drwxr-x---  # TODO: Not needed with systemd.
 
-# Use a global variable to track the subprocess. This is needed for sig_term_handler.
-cammon_subprocess = None
+termination_event = threading.Event()
 
 
 class InitializationException(Exception):
@@ -65,83 +54,28 @@ class InitializationException(Exception):
     """
 
 
-def get_user_and_group_ids():
-    """Get user and group information for dropping privileges.
-
-    Returns the user and group IDs that the program should eventually run as.
-    """
+def get_user_id():
+    """Return (int): The user ID that the program runs as."""
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
         message = 'User %s does not exist.' % PROCESS_USERNAME
         raise InitializationException(message) from key_error
-    try:
-        program_group = grp.getgrnam(PROCESS_GROUP_NAME)
-    except KeyError as key_error:
-        message = 'Group %s does not exist.' % PROCESS_GROUP_NAME
-        raise InitializationException(message) from key_error
 
-    return program_user.pw_uid, program_group.gr_gid
+    return program_user.pw_uid
 
 
-def read_configuration_and_create_logger(program_uid, program_gid):
-    """Reads the configuration file and creates the application logger. This is done in the
-    same function because part of the logger creation is dependent upon reading the
-    configuration file.
-
-    program_uid: The system user ID this program should drop to before daemonization.
-    program_gid: The system group ID this program should drop to before daemonization.
-    Returns the read system config, a confighelper instance, and a logger instance.
+# TODO: Consider checking ACLs. (gpgmailer issue 22)
+def verify_safe_file_permissions():
+    """Crashes the application if unsafe file permissions exist on application configuration
+    files.
     """
-    print('Reading %s...' % CONFIGURATION_PATHNAME)
+    program_uid = get_user_id()
 
     if not os.path.isfile(CONFIGURATION_PATHNAME):
         raise InitializationException(
             'Configuration file %s does not exist. Quitting.' % CONFIGURATION_PATHNAME)
 
-    config_file = configparser.SafeConfigParser()
-    config_file.read(CONFIGURATION_PATHNAME)
-
-    config = {}
-    config_helper = confighelper.ConfigHelper()
-    # Figure out the logging options so that can start before anything else.
-    # TODO: Eventually add a verify_string_list method. (gpgmailer issue 20)
-    config['log_level'] = config_helper.verify_string_exists(config_file, 'log_level')
-
-    # Create logging directory.  drwxr-x--- cammon cammon
-    log_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP  # TODO: Break out into method to create image directory.
-    # TODO: Look into defaulting the logging to the console until the program gets more
-    #   bootstrapped. (gpgmailer issue 18)
-    print('Creating logging directory %s.' % LOG_DIR)
-    if not os.path.isdir(LOG_DIR):
-        # Will throw exception if directory cannot be created.
-        os.makedirs(LOG_DIR, log_mode)
-    os.chown(LOG_DIR, program_uid, program_gid)
-    os.chmod(LOG_DIR, log_mode)
-
-    # Temporarily drop permissions and create the handle to the logger.
-    print('Configuring logger.')
-    os.setegid(program_gid)
-    os.seteuid(program_uid)
-    config_helper.configure_logger(os.path.join(LOG_DIR, LOG_FILE), config['log_level'])  # TODO: Split out into own method.
-
-    logger = logging.getLogger(__name__)
-
-    logger.info('Verifying non-logging configuration.')
-
-    # Parse the configuration file. The parsed result is returned as an object.
-    config = cammonconfig.CammonConfig(config_file)
-
-    return config, config_helper, logger
-
-
-# TODO: Consider checking ACLs. (gpgmailer issue 22)
-def verify_safe_file_permissions(program_uid):
-    """Crashes the application if unsafe file permissions exist on application configuration
-    files.
-
-    program_uid: The system user ID that should own the configuration file.
-    """
     # Unlike other Parkbench programs, the configuration file should be owned by 'cammon'
     #   because the subprocess (running as cammon) needs to be able to read the
     #   configuration file.
@@ -159,122 +93,31 @@ def verify_safe_file_permissions(program_uid):
             % CONFIGURATION_PATHNAME)
 
 
-def create_directory(system_path, program_dirs, uid, gid, mode):
-    """Creates directories if they do not exist and sets the specified ownership and
-    permissions.
+def sig_term_handler(_signal, _stack_frame):
+    """Signal handler for SIGTERM. Sets a thread safe event that should cause the program to
+    gracefully exit.
 
-    system_path: The system path that the directories should be created under. These are
-      assumed to already exist. The ownership and permissions on these directories are not
-      modified.
-    program_dirs: A string representing additional directories that should be created under
-      the system path that should take on the following ownership and permissions.
-    uid: The system user ID that should own the directory.
-    gid: The system group ID that should be associated with the directory.
-    mode: The unix standard 'mode bits' that should be associated with the directory.
+    _signal: Object representing the signal thrown.
+    _stack_frame: Represents the stack frame.
     """
-    logger.info('Creating directory %s.', os.path.join(system_path, program_dirs))
-
-    path = system_path
-    for directory in program_dirs.strip('/').split('/'):
-        path = os.path.join(path, directory)
-        if not os.path.isdir(path):
-            # Will throw exception if file cannot be created.
-            os.makedirs(path, mode)
-        os.chown(path, uid, gid)
-        os.chmod(path, mode)
+    termination_event.set()
 
 
-def drop_permissions_forever(uid, gid):
-    """Drops escalated permissions forever to the specified user and group.
-
-    uid: The system user ID to drop to.
-    gid: The system group ID to drop to.
-    """
-    logger.info('Dropping permissions for user %s.', PROCESS_USERNAME)
-    os.initgroups(PROCESS_USERNAME, gid)
-    os.setgid(gid)
-    os.setuid(uid)
-
-
-def sig_term_handler(signal, stack_frame):
-    """Signal handler for SIGTERM. Quits when SIGTERM is received.
-
-    signal: Object representing the signal thrown.
-    stack_frame: Represents the stack frame.
-    """
-    logger.info('SIGTERM received. Quitting.')  # TODO: Is this thread safe?
-    if cammon_subprocess is not None:
-        logger.info('Killing cammon subprocess.')  # TODO: Is this thread safe?
-        cammon_subprocess.kill()
-    sys.exit(0)
-
-
-def setup_daemon_context(log_file_handle, program_uid, program_gid):
-    """Creates the daemon context. Specifies daemon permissions, PID file information, and
-    the signal handler.
-
-    log_file_handle: The file handle to the log file.
-    program_uid: The system user ID that should own the daemon process.
-    program_gid: The system group ID that should be assigned to the daemon process.
-    Returns the daemon context.
-    """
-    daemon_context = daemon.DaemonContext(
-        working_directory='/',  # TODO: Handled by systemd.
-        pidfile=pidlockfile.PIDLockFile(
-            os.path.join(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, PID_FILE)), # TODO: Not needed for 'notify' services.
-        umask=PROGRAM_UMASK,  # TODO: Handled by systemd.
-    )
-
-    # TODO: Need to replace the signal handler setup.
-    daemon_context.signal_map = {
-        signal.SIGTERM: sig_term_handler,
-    }
-
-    daemon_context.files_preserve = [log_file_handle]  # TODO: Using the system journal instead with 'parkbench' journal namespace.
-
-    # Set the UID and GID to 'cammon' user and group.
-    daemon_context.uid = program_uid  # TODO: Handled by systemd.
-    daemon_context.gid = program_gid  # TODO: Handled by systemd.
-
-    return daemon_context
-
-
-def main():
+def start():
     """The parent function for the entire program. It loads and verifies configuration,
     daemonizes, and starts the main program loop.
     """
-    os.umask(PROGRAM_UMASK)
-    program_uid, program_gid = get_user_and_group_ids()
-    global logger
-    config, config_helper, logger = read_configuration_and_create_logger(
-        program_uid, program_gid)
+    confighelper.configure_logger()
+    logger = logging.getLogger(__name__)
 
     try:
-        verify_safe_file_permissions(program_uid)
+        verify_safe_file_permissions()
+        config = cammonconfig.CammonConfig()
+        logger.setLevel(config.log_level)
 
-        # Re-establish root permissions to create required directories.
-        os.seteuid(os.getuid())
-        os.setegid(os.getgid())
+        signal.signal(signal.SIGTERM, sig_term_handler)
 
-        # drwxr-x--- cammon cammon
-        create_directory(
-            LOG_DIR, IMAGE_DIRS, program_uid, program_gid,
-            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP)
-
-        # Non-root users cannot create files in /run, so create a directory that can be
-        #   written to. Full access to user only.  drwx------ cammon cammon
-        create_directory(SYSTEM_PID_DIR, PROGRAM_PID_DIRS, program_uid, program_gid, # TODO: Not needed with systemd.
-                         stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-
-        # Configuration has been read and directories setup. Now drop permissions forever.
-        drop_permissions_forever(program_uid, program_gid)  # TODO: Not needed with systemd.
-
-        daemon_context = setup_daemon_context(
-            config_helper.get_log_file_handle(), program_uid, program_gid)  # TODO: Except for the signal handler, not needed with systemd.
-
-        logger.info('Daemonizing...')
-        with daemon_context:  # TODO: Daemon context is not needed with systemd.
-            main_loop(config)
+        main_loop(config)
 
     except Exception as exception:  # pylint: disable=broad-except
         logger.critical('Fatal %s: %s\n%s', type(exception).__name__, str(exception),
@@ -291,38 +134,45 @@ def main_loop(config):
     config: The program configuration object, mostly based on the configuration file.
     """
     global cammon_subprocess
+    logger = logging.getLogger()
 
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
 
     # TODO: Call sd_notify here.
 
     # Loop forever.
-    while True:
+    while not termination_event.is_set():
         try:
             # Wait for the device to show up.
-            while not glob.glob(selected_device_pathname):
+            while not glob.glob(selected_device_pathname) and not termination_event.is_set():
                 time.sleep(.1)
 
-            # Startup the subprocess to that takes photos.
-            logger.info("Detected video device %s. Starting cammon subprocess.",
-                        selected_device_pathname)
-            cammon_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
+            if not termination_event.is_set():
+                # Startup the subprocess to that takes photos.
+                logger.info('Detected video device %s. Starting cammon subprocess.',
+                            selected_device_pathname)
+                cammon_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
 
             # Loop while the device exists and the subprocess is still running.
-            while glob.glob(selected_device_pathname) and cammon_subprocess.poll() is None:
+            while glob.glob(selected_device_pathname) and cammon_subprocess.poll() is None \
+                    and not termination_event.is_set():
                 time.sleep(.1)
 
             # Kill the subprocess so it can be restarted.
-            try:
-                logger.info('Detected device removal. Killing cammon subprocess.')
-                # TODO: Send a signal to cammon to flush its current e-mail buffer, give it a
-                #   second then do a kill or kill -9. (issue 4)
-                cammon_subprocess.kill()
-            except OSError as os_error:
-                logger.error('Error killing cammon subprocess. %s: %s',
-                             type(os_error).__name__, str(os_error))
-                logger.error('%s', traceback.format_exc())
-                logger.error('Ignoring.')  # The subprocess might no longer exist.
+            if cammon_subprocess is not None:
+                try:
+                    if termination_event.is_set():
+                        logger.info('SIGTERM received. Killing cammon subprocess.')
+                    else:
+                        logger.info('Detected device removal. Killing cammon subprocess.')
+                    # TODO: Send a signal to cammon to flush its current e-mail buffer, give
+                    #   it a second then do a kill or kill -9. (issue 4)
+                    cammon_subprocess.kill()
+                except OSError as os_error:
+                    logger.error('Error killing cammon subprocess. %s: %s',
+                                 type(os_error).__name__, str(os_error))
+                    logger.error('%s', traceback.format_exc())
+                    logger.error('Ignoring.')  # The subprocess might no longer exist.
 
         except Exception as exception:  # pylint: disable=broad-except
             logger.error(
@@ -330,6 +180,8 @@ def main_loop(config):
                 traceback.format_exc())
             time.sleep(.1)
 
+    logging.info('Program terminated from receiving SIGTERM.')
 
-if __name__ == "__main__":
-    main()
+
+if __name__ == '__main__':
+    start()
