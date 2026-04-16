@@ -41,8 +41,7 @@ class CammonConfig():
 
         config_helper = confighelper.ConfigHelper()
 
-        # TODO: Eventually add a verify_string_list method. (gpgmailer issue 20)
-        self.log_level = config_helper.verify_string_exists(config_parser, 'log_level')
+        self.log_level = config_helper.verify_log_level(config_parser)
 
         # The number of the video device we want to capture photos with. Corresponds to the
         #   video device number that is in the Linux /dev directory.

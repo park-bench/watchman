@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Copyright 2015-2025 Joel Allen Luellwitz and Emily Frost
+# Copyright 2015-2026 Joel Allen Luellwitz and Emily Frost
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import glob
 import logging
 import os
 import pwd
+import sdnotify
 import signal
 import stat
 import subprocess
@@ -107,7 +108,7 @@ def start():
     """The parent function for the entire program. It loads and verifies configuration,
     daemonizes, and starts the main program loop.
     """
-    confighelper.configure_logger()
+    confighelper.ConfigHelper.configure_logger()
     logger = logging.getLogger(__name__)
 
     try:
@@ -137,8 +138,9 @@ def main_loop(config):
     logger = logging.getLogger()
 
     selected_device_pathname = VIDEO_DEVICE_PREFIX % config.video_device_number
+    cammon_subprocess = None
 
-    # TODO: Call sd_notify here.
+    sdnotify.SystemdNotifier().notify('READY=1')
 
     # Loop forever.
     while not termination_event.is_set():
@@ -146,6 +148,7 @@ def main_loop(config):
             # Wait for the device to show up.
             while not glob.glob(selected_device_pathname) and not termination_event.is_set():
                 time.sleep(.1)
+                sdnotify.SystemdNotifier().notify('WATCHDOG=1')
 
             if not termination_event.is_set():
                 # Startup the subprocess to that takes photos.
@@ -157,6 +160,7 @@ def main_loop(config):
             while glob.glob(selected_device_pathname) and cammon_subprocess.poll() is None \
                     and not termination_event.is_set():
                 time.sleep(.1)
+                sdnotify.SystemdNotifier().notify('WATCHDOG=1')
 
             # Kill the subprocess so it can be restarted.
             if cammon_subprocess is not None:
@@ -179,6 +183,7 @@ def main_loop(config):
                 'Unexpected error %s: %s\n%s', type(exception).__name__, str(exception),
                 traceback.format_exc())
             time.sleep(.1)
+            sdnotify.SystemdNotifier().notify('WATCHDOG=1')
 
     logging.info('Program terminated from receiving SIGTERM.')
 

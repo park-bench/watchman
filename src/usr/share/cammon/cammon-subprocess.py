@@ -36,14 +36,14 @@ import gpgmailmessage
 
 
 class CammonSubprocess():
-    """Monitors a camera, sending e-mails and saving images when motion is detected.  This
-    class runs in its own process because OpenCV does not support device removal.  The work
+    """Monitors a camera, sending e-mails and saving images when motion is detected. This
+    class runs in its own process because OpenCV does not support device removal. The work
     around is to kill this process when the camera device disappears.
     """
 
     def start(self):
 
-        confighelper.configure_logger()
+        confighelper.ConfigHelper.configure_logger()
         self.logger = logging.getLogger(__name__)
 
         try:
