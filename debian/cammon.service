@@ -20,6 +20,7 @@ ExecStartPre=+/usr/share/cammon/cammon_start_pre.sh
 ExecStart=/usr/share/cammon/cammond.py
 OOMPolicy=continue
 # Not available in current systemd: OpenFile=/etc/cammon/cammon.conf:config:read-only
+# TODO: See if you can remove the need for SupplementaryGroups
 SupplementaryGroups=video gpgmailer
 # Not available in current systemd: SetLoginEnvironment=false
 NoNewPrivileges=true

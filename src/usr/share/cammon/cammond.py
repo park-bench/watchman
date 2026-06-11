@@ -41,7 +41,6 @@ PROGRAM_NAME = 'cammon'
 CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_NAME)
 IMAGE_DIR = os.path.join('/var/log', PROGRAM_NAME, 'images')
 PROCESS_USERNAME = PROGRAM_NAME
-PROCESS_GROUP_NAME = PROGRAM_NAME
 SUBPROCESS_PATHNAME = os.path.join(
     '/usr/share', PROGRAM_NAME, '%s-subprocess.py' % PROGRAM_NAME)
 VIDEO_DEVICE_PREFIX = '/dev/video%d'
@@ -57,6 +56,7 @@ class InitializationException(Exception):
 
 def get_user_id():
     """Return (int): The user ID that the program runs as."""
+
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
@@ -71,19 +71,15 @@ def verify_safe_file_permissions():
     """Crashes the application if unsafe file permissions exist on application configuration
     files.
     """
-    program_uid = get_user_id()
-
     if not os.path.isfile(CONFIGURATION_PATHNAME):
         raise InitializationException(
             'Configuration file %s does not exist. Quitting.' % CONFIGURATION_PATHNAME)
 
-    # Unlike other Parkbench programs, the configuration file should be owned by 'cammon'
-    #   because the subprocess (running as cammon) needs to be able to read the
-    #   configuration file.
+    # The configuration file should be owned by cammon.
     config_file_stat = os.stat(CONFIGURATION_PATHNAME)
-    if config_file_stat.st_uid != program_uid:
+    if config_file_stat.st_uid != get_user_id():
         raise InitializationException(
-            'File %s must be owned by %s.' % (CONFIGURATION_PATHNAME, PROGRAM_NAME))
+            'File %s must be owned by %s.' % (CONFIGURATION_PATHNAME, PROCESS_USERNAME))
     if bool(config_file_stat.st_mode & stat.S_IWGRP):
         raise InitializationException(
             "File %s cannot be writable via the group access permission."
@@ -106,7 +102,7 @@ def sig_term_handler(_signal, _stack_frame):
 
 def start():
     """The parent function for the entire program. It loads and verifies configuration,
-    daemonizes, and starts the main program loop.
+    and starts the main program loop.
     """
     confighelper.ConfigHelper.configure_logger()
     logger = logging.getLogger(__name__)

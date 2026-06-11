@@ -33,7 +33,7 @@ class CammonConfig():
         logger = logging.getLogger()
 
         config_pathname = '/etc/cammon/cammon.conf'
-        logger.info('Reading %s...' % config_pathname)
+        logger.info('Reading %s...', config_pathname)
         config_parser = configparser.SafeConfigParser()
         config_parser.read(config_pathname)
 
