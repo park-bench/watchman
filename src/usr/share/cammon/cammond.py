@@ -38,11 +38,10 @@ from parkbenchcommon import confighelper
 
 # Constants
 PROGRAM_NAME = 'cammon'
-CONFIGURATION_PATHNAME = os.path.join('/etc', PROGRAM_NAME, '%s.conf' % PROGRAM_NAME)
-IMAGE_DIR = os.path.join('/var/log', PROGRAM_NAME, 'images')
+CONFIGURATION_PATHNAME = f'/etc/{PROGRAM_NAME}/{PROGRAM_NAME}.conf'
+IMAGE_DIR = f'/var/log/{PROGRAM_NAME}/images'
 PROCESS_USERNAME = PROGRAM_NAME
-SUBPROCESS_PATHNAME = os.path.join(
-    '/usr/share', PROGRAM_NAME, '%s-subprocess.py' % PROGRAM_NAME)
+SUBPROCESS_PATHNAME = f'/usr/share/{PROGRAM_NAME}/{PROGRAM_NAME}-subprocess.py'
 VIDEO_DEVICE_PREFIX = '/dev/video%d'
 
 termination_event = threading.Event()
@@ -60,7 +59,7 @@ def get_user_id():
     try:
         program_user = pwd.getpwnam(PROCESS_USERNAME)
     except KeyError as key_error:
-        message = 'User %s does not exist.' % PROCESS_USERNAME
+        message = f'User {PROCESS_USERNAME} does not exist.'
         raise InitializationException(message) from key_error
 
     return program_user.pw_uid
@@ -73,21 +72,21 @@ def verify_safe_file_permissions():
     """
     if not os.path.isfile(CONFIGURATION_PATHNAME):
         raise InitializationException(
-            'Configuration file %s does not exist. Quitting.' % CONFIGURATION_PATHNAME)
+            f'Configuration file {CONFIGURATION_PATHNAME} does not exist. Quitting.')
 
     # The configuration file should be owned by cammon.
     config_file_stat = os.stat(CONFIGURATION_PATHNAME)
     if config_file_stat.st_uid != get_user_id():
         raise InitializationException(
-            'File %s must be owned by %s.' % (CONFIGURATION_PATHNAME, PROCESS_USERNAME))
+            f'File {CONFIGURATION_PATHNAME} must be owned by {PROCESS_USERNAME}.')
     if bool(config_file_stat.st_mode & stat.S_IWGRP):
         raise InitializationException(
-            "File %s cannot be writable via the group access permission."
-            % CONFIGURATION_PATHNAME)
+            f'File {CONFIGURATION_PATHNAME} cannot be writable via the group access '
+            'permission.')
     if bool(config_file_stat.st_mode & (stat.S_IROTH | stat.S_IWOTH | stat.S_IXOTH)):
         raise InitializationException(
-            "File %s cannot have 'other user' access permissions set."
-            % CONFIGURATION_PATHNAME)
+            f"File {CONFIGURATION_PATHNAME} cannot have 'other user' access permissions set."
+            )
 
 
 def sig_term_handler(_signal, _stack_frame):
@@ -117,8 +116,8 @@ def start():
         main_loop(config)
 
     except Exception as exception:  # pylint: disable=broad-except
-        logger.critical('Fatal %s: %s\n%s', type(exception).__name__, str(exception),
-                        traceback.format_exc())
+        logger.critical(f'Fatal {type(exception).__name__}: {str(exception)}\n'
+                        f'{traceback.format_exc()}')
         if cammon_subprocess is not None:
             logger.critical('Killing cammon subprocess.')
             cammon_subprocess.kill()
@@ -148,8 +147,8 @@ def main_loop(config):
 
             if not termination_event.is_set():
                 # Startup the subprocess to that takes photos.
-                logger.info('Detected video device %s. Starting cammon subprocess.',
-                            selected_device_pathname)
+                logger.info(f'Detected video device {selected_device_pathname}. Starting '
+                            'cammon subprocess.')
                 cammon_subprocess = subprocess.Popen([SUBPROCESS_PATHNAME])
 
             # Loop while the device exists and the subprocess is still running.
@@ -169,15 +168,15 @@ def main_loop(config):
                     #   it a second then do a kill or kill -9. (issue 4)
                     cammon_subprocess.kill()
                 except OSError as os_error:
-                    logger.error('Error killing cammon subprocess. %s: %s',
-                                 type(os_error).__name__, str(os_error))
-                    logger.error('%s', traceback.format_exc())
+                    logger.error(f'Error killing cammon subprocess. '
+                                 f'{type(os_error).__name__}: {str(os_error)}')
+                    logger.error(f'{traceback.format_exc()}')
                     logger.error('Ignoring.')  # The subprocess might no longer exist.
 
         except Exception as exception:  # pylint: disable=broad-except
             logger.error(
-                'Unexpected error %s: %s\n%s', type(exception).__name__, str(exception),
-                traceback.format_exc())
+                f'Unexpected error {type(exception).__name__}: {str(exception)}\n'
+                f'{traceback.format_exc()}')
             time.sleep(.1)
             sdnotify.SystemdNotifier().notify('WATCHDOG=1')
 
